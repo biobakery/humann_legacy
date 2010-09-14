@@ -1,0 +1,81 @@
+C_iFiles	= 150
+C_strURL	= "ftp://chuttenh:essingly@ftp.hmpdacc.org/WholeMetagenomic/00-PreProduction/04-Annotation/"
+C_strMock	= "MockAssemblies/"
+C_strRTG	= "RTG_102_samples/"
+C_strBlast	= "reference_vs_prediction_blasts/"
+C_strJCVI	= "annotation_rules.combined.out"
+
+def encurl( strPath, strOut = nil )
+
+	strRet= "curl --ftp-ssl -k " + C_strURL + strPath
+	if( strOut )
+		strRet += " -o " + strOut; end
+	return strRet; end
+
+########## S102 sample data
+
+file "dirs.txt" => [] do |pT|
+	sh encurl( C_strRTG, pT.name )
+end
+
+file "files.txt" => ["dirs.txt"] do |pT|
+	File.open( pT.name, "w" ) do |fileOut|
+		IO.foreach( pT.prerequisites[0] ) do |strLine|
+			if( strLine.strip !~ /^\s*\S+\s+\d+\s+\d+\s+\S+\s+\d+\s+\S+\s+\d+\s+\S+\s+(.+)$/ )
+				next; end
+			strDir = $1
+			strCmd = encurl( C_strRTG + strDir + "/" )
+			strFiles = `#{strCmd}`
+			strFiles.each_line do |strFile|
+				if( strFile.strip !~ /^\s*\S+\s+\d+\s+\d+\s+\S+\s+\d+\s+\S+\s+\d+\s+\S+\s+(.+)$/ )
+					next; end
+				fileOut.puts( strDir + "/" + $1 ); end; end; end
+end
+
+task :s102 => ["files.txt"] do |pT|
+	IO.foreach( pT.prerequisites[0] ) do |strLine|
+		if( $. > C_iFiles )
+			break; end
+		strDir, strFile = strLine.strip.split( /\// )
+		strOut = strDir + "_" + strFile
+		if( !File.exists?( strOut ) )
+			sh encurl( C_strRTG + strDir + "/" + strFile, strOut ); end; end
+end
+
+########## mocks
+
+file "mock.txt" => [] do |pT|
+	sh encurl( C_strMock + C_strBlast, pT.name )
+end
+
+task :mock => ["mock.txt"] do |pT|
+	IO.foreach( pT.prerequisites[0] ) do |strLine|
+		if( strLine.strip !~ /^\s*\S+\s+\d+\s+\d+\s+\S+\s+\d+\s+\S+\s+\d+\s+\S+\s+(.+)$/ )
+			next; end
+		strFile = $1
+		if( !File.exists?( strFile ) )
+			sh encurl( [C_strMock + C_strBlast, strFile].join( "/" ),
+				strFile ); end; end
+end
+
+["jcvi_annotation_mock_even.tab", "jcvi_annotation_mock_stg.tab"].each do |strJCVI|
+	strJCVI =~ /^([^_]+).*?([^_]+)\.\S+/
+	strFile = "mock" + $2 + "_soap_" + $1 + ".jcvi"
+	file strFile => [] do |pT|
+		strJCVI =~ /^(.+)\.\S+$/
+		sh encurl( C_strMock + [$1, C_strJCVI].join( "/" ), pT.name )
+	end
+	task :mock => strFile
+end
+
+file "mockstg_soap_jgi.jgi" => [] do |pT|
+	"jgi_annotation_mock_stg.tab" =~ /^(.+)\.\S+$/
+	sh encurl( C_strMock + [$1, $1 + ".gz"].join( "/" ) ) +
+		" | gunzip | sort -k2 > " + pT.name
+end
+task :mock => "mockstg_soap_jgi.jgi"
+
+##########
+
+task :default => [:s102, :mock] do |pT|
+end

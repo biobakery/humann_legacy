@@ -23,8 +23,9 @@ for strLine in sys.stdin:
 	if not astrKEGGs:
 		print( strKO + "		" + astrLine[1] )
 		continue
-	adAbs = [random.random( ) for strCur in astrKEGGs]
-	dSum = sum( adAbs )
-	adAbs = [( dCur / dSum ) for dCur in adAbs]
+#	adAbs = [random.random( ) for strCur in astrKEGGs]
+#	dSum = sum( adAbs )
+#	adAbs = [( dCur / dSum ) for dCur in adAbs]
+	adAbs = [1] * len( astrKEGGs )
 	for i in range( len( astrKEGGs ) ):
 		print( "\t".join( (strKO, astrKEGGs[i], str(adAbs[i] * dAb)) ) )

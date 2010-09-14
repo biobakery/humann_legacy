@@ -20,16 +20,14 @@ for strLine in sys.stdin:
 		continue
 	hashScores.setdefault( astrLine[1], {} )[astrLine[0]] = float(astrLine[2])
 for strKEGG, hashKOs in hashScores.items( ):
-	adAbs = hashKOs.values( )
-	adAbs.sort( )
-	dAve = sum( adAbs ) / len( adAbs )
+	adAbs = sorted( hashKOs.values( ) )
 	if len( adAbs ) > 3:
 		iFourth = len( adAbs ) / 4
-		d25, d75 = adAbs[iFourth], adAbs[iFourth * 3]
-		dIQR = d75 - d25
-		dLIF = d25 - ( 1.5 * dIQR )
+		d25, d50, d75 = adAbs[iFourth], adAbs[iFourth * 2], adAbs[iFourth * 3]
+#		dIQR = d75 - d25
+#		dLIF = d25 - ( 1.5 * dIQR )
 		for strKO, dAb in hashKOs.items( ):
-			if dAb <= dLIF:
-				hashKOs[strKO] = dAve
+			if dAb < d50:
+				hashKOs[strKO] = d50
 	for strKO, dAb in hashKOs.items( ):
 		print( "\t".join( (strKO, strKEGG, str(dAb)) ) )

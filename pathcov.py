@@ -33,6 +33,6 @@ for strKEGG, hashKOs in hashScores.items( ):
 		continue
 	iHits = 0
 	for strKO, dAb in hashKOs.items( ):
-		if dAb >= dMed:
+		if dAb > dMed:
 			iHits += 1
 	print( "\t".join( (strKEGG, str(float(iHits) / len( hashKOs ))) ) )

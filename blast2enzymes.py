@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import math
 import sys
 
 if len( sys.argv ) != 2:
@@ -7,58 +8,60 @@ if len( sys.argv ) != 2:
 strKOC = sys.argv[1]
 
 hashKOC = {}
-astrKOs = []
 for strLine in open( strKOC ):
 	astrLine = strLine.rstrip( ).split( "\t" )
-	astrKOs.append( astrLine[0] )
+	hashKOC[astrLine[0]] = hashKO = {}
 	for strToken in astrLine[1:]:
 		strOrg, strGene = strToken.split( "#" )
-		strOrg = strOrg.lower( )
-		strGene = strGene.upper( )
-		hashKOC.setdefault( strOrg, {} ).setdefault( astrLine[0],
-			{} )[strGene] = True
+		hashKO.setdefault( strOrg.lower( ), set() ).add( strGene.upper( ) )
 
+dSum = 0
 strPrev = None
 hashAlignments = {}
 hashhashOrgs = {}
 for strLine in sys.stdin:
-	astrLine = strLine.rstrip( ).split( "\t" )
-	strFrom, strTo, strScore = astrLine[2], astrLine[0], astrLine[-1]
+	strLine = strLine.strip( )
+	if strLine[0] == "#":
+		continue
+	astrLine = strLine.split( "\t" )
+	strFrom = astrLine[2]
+	if strFrom != strPrev:
+		if dSum > 0:
+#			sys.stderr.write( "%s\t%g\n" % (strFrom, dSum) )
+			for strCur, dCur in hashAlignments.items( ):
+				strOrg, strGene = strCur.split( ":" )
+				strGene = strGene.upper( )
+				hashGenes = hashhashOrgs.setdefault( strOrg, {} )
+				hashGenes[strGene] = ( dCur / dSum ) + hashGenes.get(
+					strGene, 0 )
+		strPrev = strFrom
+		dSum = 0
+		hashAlignments = {}
+	strTo, strScore = astrLine[0], astrLine[-1]
+	if strTo.find( ":" ) < 0:
+		continue
 	try:
 		dScore = float(strScore)
 	except ValueError:
 		continue
-	if strFrom != strPrev:
-		adScores = (( 1 - d ) for d in hashAlignments.values( ))
-		dSum = sum( adScores )
-		if dSum > 0:
-#			sys.stderr.write( "%s\t%g\n" % (strFrom, dSum) )
-			for astrTo, dScore in hashAlignments.items( ):
-				strOrg, strGene = astrTo
-				strGene = strGene.upper( )
-				d = ( 1 - dScore ) / dSum
-				if strOrg in hashhashOrgs:
-					hashGenes = hashhashOrgs[strOrg]
-					d += hashGenes.get( strGene, 0 )
-					hashGenes[strGene] = d
-				else:
-					hashhashOrgs[strOrg] = {strGene : d}
-
-		strPrev = strFrom
-		hashAlignments = {}
-	strOrg, strID = strTo.split( ":" )
-	a = (strOrg, strID)
-	hashAlignments[a] = min( (hashAlignments.get( a, 1 ), dScore) )
+	dScore = math.exp( -dScore )
+	dSum += dScore
+	hashAlignments[strTo] = max( (hashAlignments.get( strTo, 0 ), dScore) )
 
 astrOrgs = hashhashOrgs.keys( )
-print( "GID	Abundance" )
-for strKO in astrKOs:
-#	sys.stderr.write( "%s\n" % strKO )
+hashScores = {}
+dSum = 0
+for strKO, hashKO in hashKOC.items( ):
 	adScores = [0] * len( astrOrgs )
 	for i in range( len( adScores ) ):
 		strOrg = astrOrgs[i]
-		for strGene in hashKOC.get( strOrg, {} ).get( strKO, {} ).keys( ):
+		for strGene in hashKO.get( strOrg, set() ):
 			adScores[i] += hashhashOrgs.get( strOrg, {} ).get( strGene, 0 )
-	if sum( adScores ) == 0:
-		continue
-	print( "\t".join( (strKO, str(sum( adScores ))) ) )
+	dScore = sum( adScores )
+	if dScore > 0:
+		hashScores[strKO] = dScore
+		dSum += dScore
+
+print( "GID	Abundance" )
+for strKO, dScore in hashScores.items( ):
+	print( "\t".join( (strKO, str(dScore)) ) ) # / dSum)) ) )
