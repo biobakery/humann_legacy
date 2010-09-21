@@ -59,6 +59,7 @@ class CProcessor:
 c_strDirInput				= "data"
 c_strDirOutput				= "output"
 c_strInputMapKEGG			= "map_kegg.txt"
+c_strInputMockrefs			= "mockrefs/mockrefs.txt"
 c_strFileKO					= "ko"
 c_strFileKOC				= "koc"
 c_strFileCOGC				= "cogc"
@@ -81,8 +82,8 @@ c_apProcessors				= [
 		[c_strFileKOC],		True ),
 	CProcessor( ".alignments.gz",	"01",	"keg",	"./blast2enzymes.py",
 		[c_strFileKOC],		True ),
-#	CProcessor( ".tab",				"01",	"keg",	"./tab2enzymes.py",
-#		[c_strFileKOC],		True ),
+	CProcessor( ".tab",				"01",	"keg",	"./tab2enzymes.py",
+		[c_strInputMockrefs],	True ),
 	CProcessor( ".jgi",				"01",	"keg",	"./jgi2enzymes.py",
 		[c_strFileCOGC],	True ),
 	CProcessor( ".jcvi",			"01",	"keg",	"./jcvi2enzymes.py",
