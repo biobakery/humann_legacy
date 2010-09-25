@@ -89,6 +89,7 @@ file "mock_community_mapx_alignments.txt" =>
 			pT.name
 		fFirst = false; end
 end
+#Commented out since this isn't quite right - needs to sep. even/staggered
 #task :mock => "mock_community_mapx_alignments.txt"
 
 ##########

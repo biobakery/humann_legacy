@@ -8,23 +8,23 @@ if len( sys.argv ) != 2:
 	raise Exception( "Usage: smooth.py <keggc> < <pathways.txt>" )
 strKEGGC = sys.argv[1]
 
-hashKOs = {}
+hashKEGGs = {}
 for strLine in open( strKEGGC ):
 	astrLine = strLine.strip( ).split( "\t" )
-	for strKO in astrLine[1:]:
-		hashKOs.setdefault( strKO, [] ).append( astrLine[0] )
+	hashKEGGs[astrLine[0]] = astrLine[1:]
 
+setKEGGs = set()
 setHit = set()
 for strLine in sys.stdin:
-	strLine = strLine.strip( )
-	astrLine = strLine.split( "\t" )
-	if astrLine[0] == "GID":
-		print( strLine )
+	strKO, strKEGG, strScore = strLine.strip( ).split( "\t" )
+	if strKO == "GID":
+		sys.stdout.write( strLine )
 		continue
-	setHit.add( "_".join( astrLine[0:2] ) )
-	astrLine[2] = str(float(astrLine[2]) + c_dEpsilon)
-	print( "\t".join( astrLine ) )
-for strKO, astrKEGGs in hashKOs.items( ):
-	for strKEGG in astrKEGGs:
+	setKEGGs.add( strKEGG )
+	setHit.add( "_".join( (strKO, strKEGG) ) )
+	strScore = str(float(strScore) + c_dEpsilon)
+	print( "\t".join( (strKO, strKEGG, strScore) ) )
+for strKEGG in setKEGGs:
+	for strKO in hashKEGGs.get( strKEGG, () ):
 		if "_".join( (strKO, strKEGG) ) not in setHit:
 			print( "\t".join( (strKO, strKEGG, str(c_dEpsilon)) ) )

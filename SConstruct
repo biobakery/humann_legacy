@@ -78,33 +78,54 @@ c_strProgName				= "./postprocess_names.rb"
 c_strProgNormalize			= "./normalize.py"
 c_strSuffixOutput			= ".txt"
 c_apProcessors				= [
+# Preliminary validation
 	CProcessor( ".txt.bz2",			"01",	"keg",	"./blast2enzymes.py",
 		[c_strFileKOC],		True ),
+# Preliminary validation
+	CProcessor( ".txt.gz",			"01",	"keg",	"./blast2enzymes.py",
+		[c_strFileKOC],		True ),
+# Preliminary validation
 	CProcessor( ".alignments.gz",	"01",	"keg",	"./blast2enzymes.py",
 		[c_strFileKOC],		True ),
+# Unvalidated
 	CProcessor( ".tab",				"01",	"keg",	"./tab2enzymes.py",
 		[c_strInputMockrefs],	True ),
+# Unvalidated
 	CProcessor( ".jgi",				"01",	"keg",	"./jgi2enzymes.py",
 		[c_strFileCOGC],	True ),
+# Unvalidated
 	CProcessor( ".jcvi",			"01",	"keg",	"./jcvi2enzymes.py",
 		[c_strFileECC],		True ),
+# Unvalidated
 	CProcessor( "01",	"02",	"nve",	"./enzymes2pathways.py",
 		[c_strFileKEGGC] ),
+# Preliminary validation
 	CProcessor( "01",	"02",	"mpt",	"./enzymes2pathways_mp.py",
 		[] ),
+# Preliminary validation
 	CProcessor( "02",	"03a",	"nve",	"./smooth.py",
 		[c_strFileKEGGC] ),
+# Preliminary validation
+	CProcessor( "02",	"03a",	"wbl",	"./smooth_wb.py",
+		[c_strFileKEGGC] ),
+# Unvalidated
 	CProcessor( "03a",	"03b",	"nve",	"./gapfill.py",
 		[c_strFileKEGGC] ),
+# Validated
 	CProcessor( "03a",	"03b",	"nul",	"./cat.py",
 		[c_strFileKEGGC] ),
+# Unvalidated
 	CProcessor( "03b",	"04a",	"nve",	"./pathcov.py",
 		[c_strFileKEGGC] ),
+# Unvalidated
 	CProcessor( "03b",	"04b",	"nve",	"./pathab.py",
 		[c_strFileKEGGC] ),
 ]
 c_aastrFinalizers			= [
+	["04a",	"./zero.py"],
+	["04b",	"./zero.py"],
 	["04b",	"./normalize.py"],
+	[None,	"./convenience_bsites.py"],
 ]
 c_astrInput = []
 for pFile in Glob( c_strDirInput + "/*" ):
@@ -171,7 +192,7 @@ for strType, astrType in hashTo.items( ):
 	strFile = c_strDirOutput + "/" + strType + c_strSuffixOutput
 	astrFinalizers = []
 	for astrFinalizer in c_aastrFinalizers:
-		if strFile.find( astrFinalizer[0] ) >= 0:
+		if ( not astrFinalizer[0] ) or ( strFile.find( astrFinalizer[0] ) >= 0 ):
 			astrFinalizers.append( astrFinalizer[1] )
 
 	def funcFile( target, source, env, astrFinalizers = astrFinalizers ):

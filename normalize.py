@@ -25,5 +25,5 @@ for iRow in range( len( astrIDs ) ):
 	for iCol in range( len( adSums ) ):
 		if adData[iCol]:
 			adData[iCol] /= adSums[iCol]
-	print( "\t".join( [astrIDs[iRow]] + [( str(d) if d else "" ) for d in
+	print( "\t".join( [astrIDs[iRow]] + [( "" if ( d == None ) else str(d) ) for d in
 		adData] ) )

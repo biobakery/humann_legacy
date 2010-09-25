@@ -1,0 +1,174 @@
+import glob
+import re
+import subprocess
+import sys
+
+c_iBases			= 10**9
+c_iReadLength		= 100
+c_iPairs			= int(10**8 / c_iReadLength / 2)
+c_strTARBZ			= ".tar.bz2"
+c_strTXT			= ".txt"
+c_strGenome			= ".genome"
+c_strShred			= ".shred"
+c_strFA				= ".fa"
+c_strQual			= ".qual"
+c_strFASTQ			= ".fastq"
+c_strDAT			= ".dat"
+c_strOrganisms		= "organisms_"
+c_astrOrganisms		= glob.glob( c_strOrganisms + "*.txt" )
+c_strMAQBase		= "maq-0.7.1"
+c_strSeqBase		= "s_1_1_export"
+c_strDirOutput		= "output/"
+c_strFileMAQTARBZ	= c_strMAQBase + c_strTARBZ
+c_strFileSeqFA		= c_strDirOutput + c_strSeqBase + c_strFA
+c_strFileSeqQUAL	= c_strFileSeqFA + c_strQual
+c_strFileSeqFASTQ	= c_strDirOutput + c_strSeqBase + c_strFASTQ
+c_strFileModelDAT	= c_strDirOutput + c_strSeqBase + c_strDAT
+c_strProgMixer		= "./mixer.py"
+c_strProgQ2FQ		= "./qual2fastq.pl"
+c_strProgFQ2FA		= "./fastq2fasta.py"
+c_strProgMAQ		= "./" + c_strMAQBase + "/maq"
+c_astrTypes			= ["even", "stg"]
+c_strURLKEGG		= "ftp://ftp.genome.jp/pub/kegg/genes/organisms/"
+c_strURLMAQ			= "http://downloads.sourceforge.net/project/maq/maq/0.7.1/"
+c_strURLDACC		= "ftp://chuttenh:essingly@ftp.hmpdacc.org/WholeMetagenomic/00-PreProduction/01-RawReads/WASHU/Mock200904/"
+c_strMock			= "mock_"
+
+pE = Environment( )
+pE.Decider( "make" )
+pE.Dir( c_strDirOutput )
+
+#===============================================================================
+# Utility methods
+#===============================================================================
+
+def sh( strCmd ):
+
+	sys.stdout.write( "%s\n" % strCmd )
+	subprocess.call( strCmd, stdout = sys.stdout, shell = True )
+
+def ts( astrTargets, astrSources ):
+	
+	return (str(astrTargets[0]), [pF.get_abspath( ) for pF in astrSources]) 
+
+def enstrip( strTarget, strSuffix = None ):
+
+	strRet = strTarget.replace( c_strDirOutput, "" )
+	return ( strRet.replace( strSuffix, "" ) if strSuffix else strRet )
+
+def encurl( strURL, strTarget, strSuffix = None, fDACC = False ):
+
+	strCmd = "curl "
+	if fDACC:
+		strCmd += "--ftp-ssl -k "
+	return ( strCmd + strURL + enstrip( strTarget, strSuffix ) ) 
+
+#===============================================================================
+# KEGG reference genome downloads
+#===============================================================================
+
+def funcOrgTXT( target, source, env ):
+	'''
+	Download directory listing for one KEGG organism to allow determination of
+	genome file name.
+	'''
+	strT, astrSs = ts( target, source )
+	sh( encurl( c_strURLKEGG, strT, c_strTXT ) + "/ > " + strT )
+
+def funcOrgGenome( target, source, env ):
+	'''
+	Scan a downloaded KEGG directory file listing to find and download a
+	*.genome file.
+	'''
+	strT, astrSs = ts( target, source )
+	strDir = astrSs[0]
+	for strLine in open( strDir ):
+		pMatch = re.search( '(\S+\.genome)', strLine )
+		if pMatch:
+			sh( encurl( c_strURLKEGG, strT, c_strGenome ) + "/" + pMatch.group( 1 ) + " > " + strT )
+			break
+
+#===============================================================================
+# Illumina error model using MAQ
+#===============================================================================
+
+def funcDownloadMAQ( target, source, env ):
+
+	strT, astrSs = ts( target, source )
+	sh( "curl -LO " + c_strURLMAQ + strT )
+pE.Command( c_strFileMAQTARBZ, None, funcDownloadMAQ )
+
+def funcUntarMAQ( target, source, env ):
+	
+	strT, astrSs = ts( target, source )
+	strTarball = astrSs[0]
+	sh( "tar -xjf " + strTarball )
+	sh( "cd " + enstrip( strTarball, c_strTARBZ ) + " && ./configure && make" )
+pE.Command( c_strProgMAQ, [c_strFileMAQTARBZ], funcUntarMAQ )
+
+def funcDownloadDACC( target, source, env ):
+	
+	strT, astrSs = ts( target, source )
+#	sh( encurl( c_strURLDACC, strT, fDACC = True ) + " > " + strT )
+	sh( "scp sinister:" + enstrip( strT ) + " " + strT )
+pE.Command( c_strFileSeqFA, None, funcDownloadDACC )
+pE.Command( c_strFileSeqQUAL, None, funcDownloadDACC )
+
+def funcQ2FQ( target, source, env ):
+	
+	strT, astrSs = ts( target, source )
+	sh( " ".join( astrSs ) + " > " + strT )
+pE.Command( c_strFileSeqFASTQ, [c_strProgQ2FQ, c_strFileSeqFA, c_strFileSeqQUAL], funcQ2FQ )
+
+def funcMAQTrain( target, source, env ):
+	
+	strT, astrSs = ts( target, source )
+	strMAQ, strFASTQ = astrSs
+	sh( " ".join( (strMAQ, "simutrain", strT, strFASTQ) ) )
+pE.Command( c_strFileModelDAT, [c_strProgMAQ, c_strFileSeqFASTQ], funcMAQTrain )
+
+def funcMAQShred( target, source, env ):
+
+	astrTs, astrSs = ([str(pF) for pF in target], [pF.get_abspath( ) for pF in source])
+	strMAQ, strFASTA, strModel = astrSs
+	sh( " ".join( (strMAQ, "simulate", "-1", str(c_iReadLength), "-2", str(c_iReadLength),
+		"-N", str(c_iPairs), astrTs[0], astrTs[1], strFASTA, strModel) ) )
+
+def funcJoinPE( target, source, env ):
+	
+	strT, astrSs = ts( target, source )
+	strProg, strOne, strTwo = astrSs
+	sh( "cat " + " ".join( (strOne, strTwo) ) + " | " + strProg + " > " + strT )
+
+#===============================================================================
+# Scan organism definition file and build download/shred rules
+#===============================================================================
+
+for strOrganisms in c_astrOrganisms:
+	astrShredded = []
+	for strLine in open( strOrganisms ):
+		strLine = strLine.strip( )
+		if strLine[0] == "#":
+			continue
+		strOrg, strAmt = strLine.split( "\t" )
+		strTXT, strGenome, strShred = (( c_strDirOutput + strOrg + strCur ) for strCur in
+			(c_strTXT, c_strGenome, c_strShred))
+		pE.Command( strTXT, None, funcOrgTXT )
+		pE.Command( strGenome, [strTXT], funcOrgGenome )
+		strOne, strTwo = (( c_strDirOutput + strOrg + strCur ) for strCur in (".1", ".2"))
+		pE.Command( [strOne, strTwo], [c_strProgMAQ, strGenome, c_strFileModelDAT], funcMAQShred )
+		pE.Command( strShred, [c_strProgFQ2FA, strOne, strTwo], funcJoinPE )
+		astrShredded.append( strShred )
+# Finally build rules for each type of mock community, even and staggered
+	for i in range( len( c_astrTypes ) ):
+		def funcMix( target, source, env, iMix = i ):
+		
+			strT, astrSs = ts( target, source )
+			strMixer, strOrgs, astrShredded = astrSs[0], astrSs[1], astrSs[2:]
+			sh( " ".join( [strMixer, str(c_iBases), str(iMix)] + astrShredded ) + " < " +
+				strOrgs + " > " + strT )
+
+		strMock = c_strDirOutput + strOrganisms.replace( c_strOrganisms, "%s%s_" %
+			tuple((c_strMock, c_astrTypes[i])) )
+		pE.Command( strMock, [c_strProgMixer, strOrganisms] + astrShredded, funcMix )
+		Default( strMock )
