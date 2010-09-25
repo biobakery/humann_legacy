@@ -6,6 +6,7 @@ import sys
 c_iBases			= 10**9
 c_iReadLength		= 100
 c_iPairs			= int(10**8 / c_iReadLength / 2)
+c_iHC				= 100
 c_strTARBZ			= ".tar.bz2"
 c_strTXT			= ".txt"
 c_strGenome			= ".genome"
@@ -19,6 +20,8 @@ c_astrOrganisms		= glob.glob( c_strOrganisms + "*.txt" )
 c_strMAQBase		= "maq-0.7.1"
 c_strSeqBase		= "s_1_1_export"
 c_strDirOutput		= "output/"
+c_strFileOrgsHCTXT	= c_strOrganisms + "hc" + c_strTXT
+c_strFileGenome		= c_strDirOutput + "genome"
 c_strFileMAQTARBZ	= c_strMAQBase + c_strTARBZ
 c_strFileSeqFA		= c_strDirOutput + c_strSeqBase + c_strFA
 c_strFileSeqQUAL	= c_strFileSeqFA + c_strQual
@@ -27,6 +30,7 @@ c_strFileModelDAT	= c_strDirOutput + c_strSeqBase + c_strDAT
 c_strProgMixer		= "./mixer.py"
 c_strProgQ2FQ		= "./qual2fastq.pl"
 c_strProgFQ2FA		= "./fastq2fasta.py"
+c_strProgGenome2Orgs	= "./genomes2orgs.py"
 c_strProgMAQ		= "./" + c_strMAQBase + "/maq"
 c_astrTypes			= ["even", "stg"]
 c_strURLKEGG		= "ftp://ftp.genome.jp/pub/kegg/genes/organisms/"
@@ -139,6 +143,22 @@ def funcJoinPE( target, source, env ):
 	strT, astrSs = ts( target, source )
 	strProg, strOne, strTwo = astrSs
 	sh( "cat " + " ".join( (strOne, strTwo) ) + " | " + strProg + " > " + strT )
+
+#===============================================================================
+# High complexity community definition (randomized from KEGG)
+#===============================================================================
+
+def funcKEGGGenomes( target, source, env ):
+
+	strT, astrSs = ts( target, source )
+	sh( encurl( c_strURLKEGG + "../", strT ) + " > " + strT )
+pE.Command( c_strFileGenome, None, funcKEGGGenomes )
+
+def funcOrgsHC( target, source, env ):
+
+	strT, astrSs = ts( target, source )
+	sh( " ".join( (astrSs[0], str(c_iHC), "<", astrSs[1], ">", strT) ) )
+pE.Command( c_strFileOrgsHCTXT, [c_strProgGenome2Orgs, c_strFileGenome], funcOrgsHC )
 
 #===============================================================================
 # Scan organism definition file and build download/shred rules

@@ -21,7 +21,8 @@ for strReads in astrReads:
 dTotal = 0
 hashStagger = {}
 hashGenomes = {}
-hashProvenance = {}
+astrReads = []
+astrProvenance = []
 for strLine in sys.stdin:
 	strLine = strLine.strip( )
 	if strLine[0] == "#":
@@ -32,11 +33,8 @@ for strLine in sys.stdin:
 		sys.stderr.write( "Unknown genome: %s\n" % strOrg )
 		continue
 	dStagger = float(strStagger) if fStagger else 1.0
-	dTotal += dStagger
-	hashStagger[strOrg] = dStagger
-	hashGenomes[strOrg] = astrReads = []
-	hashProvenance[strOrg] = astrProvenance = []
 	strRead = strID = ""
+	iBegin = len( astrReads )
 	for strRLine in open( strReads ):
 		strRLine = strRLine.lstrip( )
 		if strRLine[0] == ">":
@@ -47,6 +45,10 @@ for strLine in sys.stdin:
 			strRead = ""
 		else:
 			strRead += strRLine
+	if len( astrReads ) > iBegin:
+		hashGenomes[strOrg] = (iBegin, len( astrReads ))
+		hashStagger[strOrg] = dStagger
+		dTotal += dStagger
 
 astrOrgs = []
 adOrgs = []
@@ -64,9 +66,9 @@ while( iOutput < iBases ):
 		if dOrg <= dSum:
 			break
 	strOrg = astrOrgs[iOrg]
-	astrReads = hashGenomes[strOrg]
-	iCur = random.randrange( len( astrReads ) )
-	print( ">R%09d %s" % (iRead, hashProvenance[strOrg][iCur]) )
+	iBegin, iEnd = hashGenomes[strOrg]
+	iCur = random.randrange( iBegin, iEnd )
+	print( ">R%09d %s" % (iRead, astrProvenance[iCur]) )
 	print( astrReads[iCur] )
 	iRead += 1
 	iOutput += len( strRead )
