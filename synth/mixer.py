@@ -5,10 +5,10 @@ import re
 import sys
 
 if len( sys.argv ) < 4:
-	raise Exception( "Usage: mixer.py <bases> <stagger> <reads.txt>+ < <organisms.txt>" )
-strBases, strStagger, astrReads = sys.argv[1], sys.argv[2], sys.argv[3:]
+	raise Exception( "Usage: mixer.py <reads> <stagger> <reads.txt>+ < <organisms.txt>" )
+strReads, strStagger, astrReads = sys.argv[1], sys.argv[2], sys.argv[3:]
 fStagger = int(strStagger) != 0
-iBases = int(strBases)
+iReads = int(strReads)
 
 hashReads = {}
 for strReads in astrReads:
@@ -57,8 +57,7 @@ for strOrg, dStagger in hashStagger.items( ):
 	adOrgs.append( dStagger / dTotal )
 
 iRead = 0
-iOutput = 0
-while( iOutput < iBases ):
+while( iRead < iReads ):
 	dOrg = random.random( )
 	dSum = 0
 	for iOrg in range( len( astrOrgs ) ):
@@ -71,4 +70,3 @@ while( iOutput < iBases ):
 	print( ">R%09d %s" % (iRead, astrProvenance[iCur]) )
 	print( astrReads[iCur] )
 	iRead += 1
-	iOutput += len( strRead )

@@ -5,8 +5,10 @@ import sys
 
 c_iBases			= 10**9
 c_iReadLength		= 100
-c_iPairs			= int(10**8 / c_iReadLength / 2)
+c_iReads			= int(10**8 / c_iReadLength)
+c_iPairs			= int(c_iReads / 2)
 c_iHC				= 100
+c_iQ				= 4
 c_strTARBZ			= ".tar.bz2"
 c_strTXT			= ".txt"
 c_strGenome			= ".genome"
@@ -29,7 +31,9 @@ c_strFileSeqFASTQ	= c_strDirOutput + c_strSeqBase + c_strFASTQ
 c_strFileModelDAT	= c_strDirOutput + c_strSeqBase + c_strDAT
 c_strProgMixer		= "./mixer.py"
 c_strProgQ2FQ		= "./qual2fastq.pl"
+c_strProgTrimFQ		= "./trim_fastq.py"
 c_strProgFQ2FA		= "./fastq2fasta.py"
+c_strProgTrimmer	= "./TrimBWAstyle.pl"
 c_strProgGenome2Orgs	= "./genomes2orgs.py"
 c_strProgMAQ		= "./" + c_strMAQBase + "/maq"
 c_astrTypes			= ["even", "stg"]
@@ -121,8 +125,10 @@ pE.Command( c_strFileSeqQUAL, None, funcDownloadDACC )
 def funcQ2FQ( target, source, env ):
 	
 	strT, astrSs = ts( target, source )
-	sh( " ".join( astrSs ) + " > " + strT )
-pE.Command( c_strFileSeqFASTQ, [c_strProgQ2FQ, c_strFileSeqFA, c_strFileSeqQUAL], funcQ2FQ )
+	astrQ2FQ, progTrim = astrSs[:3], astrSs[-1]
+	sh( " ".join( astrQ2FQ + ["|", progTrim, str(c_iReadLength), ">", strT] ) )
+pE.Command( c_strFileSeqFASTQ, [c_strProgQ2FQ, c_strFileSeqFA, c_strFileSeqQUAL,
+	c_strProgTrimFQ], funcQ2FQ )
 
 def funcMAQTrain( target, source, env ):
 	
@@ -141,8 +147,9 @@ def funcMAQShred( target, source, env ):
 def funcJoinPE( target, source, env ):
 	
 	strT, astrSs = ts( target, source )
-	strProg, strOne, strTwo = astrSs
-	sh( "cat " + " ".join( (strOne, strTwo) ) + " | " + strProg + " > " + strT )
+	strProgTrim, strProgJoin, strOne, strTwo = astrSs
+	sh( "cat " + " ".join( (strOne, strTwo) ) + " | " + strProgTrim + " -q " + str(c_iQ) +
+		" | " + strProgJoin + " > " + strT )
 
 #===============================================================================
 # High complexity community definition (randomized from KEGG)
@@ -177,7 +184,7 @@ for strOrganisms in c_astrOrganisms:
 		pE.Command( strGenome, [strTXT], funcOrgGenome )
 		strOne, strTwo = (( c_strDirOutput + strOrg + strCur ) for strCur in (".1", ".2"))
 		pE.Command( [strOne, strTwo], [c_strProgMAQ, strGenome, c_strFileModelDAT], funcMAQShred )
-		pE.Command( strShred, [c_strProgFQ2FA, strOne, strTwo], funcJoinPE )
+		pE.Command( strShred, [c_strProgTrimmer, c_strProgFQ2FA, strOne, strTwo], funcJoinPE )
 		astrShredded.append( strShred )
 # Finally build rules for each type of mock community, even and staggered
 	for i in range( len( c_astrTypes ) ):
@@ -185,7 +192,7 @@ for strOrganisms in c_astrOrganisms:
 		
 			strT, astrSs = ts( target, source )
 			strMixer, strOrgs, astrShredded = astrSs[0], astrSs[1], astrSs[2:]
-			sh( " ".join( [strMixer, str(c_iBases), str(iMix)] + astrShredded ) + " < " +
+			sh( " ".join( [strMixer, str(c_iReads), str(iMix)] + astrShredded ) + " < " +
 				strOrgs + " > " + strT )
 
 		strMock = c_strDirOutput + strOrganisms.replace( c_strOrganisms, "%s%s_" %

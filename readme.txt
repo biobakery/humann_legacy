@@ -1,6 +1,6 @@
 NB
 ----
-All of these files use KEGG Orthology KO identifiers for genes and KEGG Pathway identifiers for pathways.  This is for demonstration purposes only and not meant to suggest they'll be the only pathways used in production analyses!  Any traceable identifiers (MetaCyc, EC, etc.) can be used for enzymes and for the pathways in which they're contained.
+All of these files currently use KEGG Orthology KO identifiers for genes and KEGG Pathway identifiers for pathways.  This is for demonstration purposes only and not meant to suggest they'll be the only pathways used in production analyses!  Any traceable identifiers (MetaCyc, EC, etc.) can be used for enzymes and for the pathways in which they're contained.
 
 See SConstruct for specific processing pipeline used to generate each file.
 - Each output file is tagged with a number to indicate its stage in the processing pipeline, e.g. "01" for the initial BLAST -> gene output, "03b" for smoothed, gap-filled pathway assignments.
@@ -55,6 +55,10 @@ Gene to pathway assignment performed using MinPath.
 *_02-*-nve*.txt
 ----
 Gene to pathway assignment performed naively using all pathways.
+
+*_03a-*-wbl*.txt
+----
+Smoothing performed using Witten-Bell discounting, which shifts sum_observed/(sum_observed + num_observed) probability mass into zero counts and reduces others by the same fraction.
 
 *_03a-*-nve*.txt
 ----

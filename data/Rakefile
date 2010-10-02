@@ -3,6 +3,7 @@ C_strURL	= "ftp://chuttenh:essingly@ftp.hmpdacc.org/WholeMetagenomic/00-PreProdu
 C_strMock	= "MockAssemblies/"
 C_strMalign	= "MockReadBased/"
 C_strRTG	= "RTG_102_samples/"
+C_strSynth	= "SyntheticMRCommunities/"
 C_strBlast	= "reference_vs_prediction_blasts/"
 C_strJCVI	= "annotation_rules.combined.out"
 
@@ -91,6 +92,21 @@ file "mock_community_mapx_alignments.txt" =>
 end
 #Commented out since this isn't quite right - needs to sep. even/staggered
 #task :mock => "mock_community_mapx_alignments.txt"
+
+########## Synthetic communities
+
+file "synth.txt" => [] do |pT|
+	sh encurl( C_strSynth, pT.name )
+end
+
+task :synth => ["synth.txt"] do |pT|
+	IO.foreach( pT.prerequisites[0] ) do |strLine|
+		if( strLine.strip !~ /^\s*\S+\s+\d+\s+\d+\s+\S+\s+\d+\s+\S+\s+\d+\s+\S+\s+(.+)$/ )
+			next; end
+		strFile = $1
+		if( !File.exists?( strFile ) )
+			sh encurl( C_strSynth + "/" + strFile, strFile ); end; end
+end
 
 ##########
 
