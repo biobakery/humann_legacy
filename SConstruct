@@ -58,6 +58,7 @@ class CProcessor:
 
 c_strDirInput				= "data"
 c_strDirOutput				= "output"
+c_strDirSynth				= "synth"
 c_strInputMapKEGG			= "map_kegg.txt"
 c_strInputMockrefs			= "mockrefs/mockrefs.txt"
 c_strFileKO					= "ko"
@@ -76,7 +77,9 @@ c_strProgKO2ECC				= "./ko2ecc.rb"
 c_strProgMerge				= "./merge_tables.py"
 c_strProgName				= "./postprocess_names.rb"
 c_strProgNormalize			= "./normalize.py"
+c_strProgZero				= "./zero.py"
 c_strSuffixOutput			= ".txt"
+c_strMock					= "mock"
 c_apProcessors				= [
 # Preliminary validation
 	CProcessor( ".txt.bz2",			"01",	"keg",	"./blast2enzymes.py",
@@ -122,9 +125,9 @@ c_apProcessors				= [
 		[c_strFileKEGGC] ),
 ]
 c_aastrFinalizers			= [
-	["04a",	"./zero.py"],
-	["04b",	"./zero.py"],
-	["04b",	"./normalize.py"],
+	["04a",	c_strProgZero],
+	["04b",	c_strProgZero],
+	["04b",	c_strProgNormalize],
 	[None,	"./convenience_bsites.py"],
 ]
 c_astrInput = []
@@ -141,13 +144,16 @@ def ex( strCmd ):
 	sys.stdout.write( "%s\n" % strCmd )
 	subprocess.call( strCmd, shell = True )
 
+def ts( astrTargets, astrSources ):
+	
+	return (str(astrTargets[0]), [pF.get_abspath( ) for pF in astrSources]) 
+
 pE = Environment( )
 pE.Decider( "timestamp-newer" )
 
 def rn( target, source, env ):
 
-	strT = str(target[0])
-	astrSs = [pF.get_abspath( ) for pF in source]
+	strT, astrSs = ts( target, source )
 	strCmd = "cat"
 	if astrSs[0].find( ".gz" ) >= 0:
 		strCmd = "z" + strCmd
@@ -188,6 +194,7 @@ hashTo = {}
 for strTo in astrTo:
 	pMatch = re.search( '_(\d+.*-\S+)' + c_strSuffixOutput + '$', strTo )
 	hashTo.setdefault( pMatch.group( 1 ), [] ).append( strTo )
+hashTypes = {}
 for strType, astrType in hashTo.items( ):
 	strFile = c_strDirOutput + "/" + strType + c_strSuffixOutput
 	astrFinalizers = []
@@ -197,8 +204,7 @@ for strType, astrType in hashTo.items( ):
 
 	def funcFile( target, source, env, astrFinalizers = astrFinalizers ):
 
-		strT = str(target[0])
-		astrSs = [pF.get_abspath( ) for pF in source]
+		strT, astrSs = ts( target, source )
 		astrFiles = astrSs[( 3 + len( astrFinalizers ) ):]
 		strFinalizers = " | ".join( astrFinalizers )
 		if len( astrFinalizers ) > 0:
@@ -206,6 +212,34 @@ for strType, astrType in hashTo.items( ):
 		ex( astrSs[0] + " " + " ".join( astrFiles ) + " | " + strFinalizers +
 			astrSs[1] + " " + astrSs[2] + " > " + strT )
 
-	pE.Command( strFile, [c_strProgMerge, c_strProgName, c_strInputMapKEGG] +
+	pFile = pE.Command( strFile, [c_strProgMerge, c_strProgName, c_strInputMapKEGG] +
 		astrFinalizers + astrType, funcFile )
-	Default( strFile )
+	Default( pFile )
+	
+	pMatch = re.search( '(\d{2}[^-]*)', strFile )
+	if pMatch:
+		hashTypes.setdefault( pMatch.group( 1 ), set() ).update( astrType )
+
+#===============================================================================
+# Synthetic community evaluation
+#===============================================================================
+
+for fileSynth in Glob( "/".join( (c_strDirSynth, c_strDirOutput, c_strMock + "_*_04*" +
+	c_strSuffixOutput) ) ):
+	pMatch = re.search( '(' + c_strMock + '.*)_(\d{2}[^-.]*)', str(fileSynth) )
+	if pMatch:
+		strBase, strType = pMatch.groups( )
+		astrFiles = filter( lambda strCur: strCur.find( strBase ) >= 0, hashTypes.get( strType, [] ) )
+		astrProgs = [c_strProgZero]
+		if strType[-1] == "b":
+			astrProgs.append( c_strProgNormalize )
+
+		def funcMock( target, source, env, astrProgs = astrProgs, astrFiles = [str(fileSynth)] + astrFiles ):
+		
+			strT, astrSs = ts( target, source )
+			strProg = astrSs[0]
+			ex( " ".join( [strProg] + astrFiles + ["|", " | ".join( astrProgs ), ">", strT] ) )
+
+		pFile = pE.Command( c_strDirOutput + "/" + strBase + "_" + strType + c_strSuffixOutput,
+			[c_strProgMerge] + astrProgs + [fileSynth] + astrFiles, funcMock )
+		Default( pFile )

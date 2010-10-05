@@ -21,6 +21,7 @@ for strLine in sys.stdin:
 		continue
 	setKEGGs.add( strKEGG )
 	setKOs = setKOs.union( hashKEGGs.get( strKEGG, () ) )
+	setKOs.add( strKO )
 	hashhashHits.setdefault( strKO, {} )[strKEGG] = float(strScore)
 iT = len( hashhashHits )
 dN = 0

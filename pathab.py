@@ -17,7 +17,8 @@ for strLine in sys.stdin:
 	astrLine = strLine.split( "\t" )
 	if astrLine[0] == "GID":
 		continue
-	hashScores.setdefault( astrLine[1], {} )[astrLine[0]] = float(astrLine[2])
+	strKO, strKEGG, strScore = astrLine
+	hashScores.setdefault( strKEGG, {} )[strKO] = float(strScore)
 print( "PID	Abundance" )
 for strKEGG, hashKOs in hashScores.items( ):
 	if len( strKEGG ) == 0:

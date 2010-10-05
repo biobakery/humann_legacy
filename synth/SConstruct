@@ -8,7 +8,7 @@ c_iReadLength		= 100
 c_iReads			= int(10**8 / c_iReadLength)
 c_iPairs			= int(c_iReads / 2)
 c_iHC				= 100
-c_iQ				= 4
+c_iQ				= 5
 c_strTARBZ			= ".tar.bz2"
 c_strTXT			= ".txt"
 c_strGenome			= ".genome"
@@ -17,7 +17,11 @@ c_strFA				= ".fa"
 c_strQual			= ".qual"
 c_strFASTQ			= ".fastq"
 c_strDAT			= ".dat"
+c_strLIST			= ".list"
+c_strCov			= "_04a"
+c_strAbd			= "_04b"
 c_strOrganisms		= "organisms_"
+c_strPathway		= "_pathway"
 c_astrOrganisms		= glob.glob( c_strOrganisms + "*.txt" )
 c_strMAQBase		= "maq-0.7.1"
 c_strSeqBase		= "s_1_1_export"
@@ -34,6 +38,8 @@ c_strProgQ2FQ		= "./qual2fastq.pl"
 c_strProgTrimFQ		= "./trim_fastq.py"
 c_strProgFQ2FA		= "./fastq2fasta.py"
 c_strProgTrimmer	= "./TrimBWAstyle.pl"
+C_strProgCov		= "./orgs2cov.py"
+C_strProgAbd		= "./orgs2abd.py"
 c_strProgGenome2Orgs	= "./genomes2orgs.py"
 c_strProgMAQ		= "./" + c_strMAQBase + "/maq"
 c_astrTypes			= ["even", "stg"]
@@ -82,6 +88,14 @@ def funcOrgTXT( target, source, env ):
 	'''
 	strT, astrSs = ts( target, source )
 	sh( encurl( c_strURLKEGG, strT, c_strTXT ) + "/ > " + strT )
+
+def funcOrgFile( target, source, env ):
+	'''
+	Download a specific file from KEGG.
+	'''
+	strT, astrSs = ts( target, source )
+	pMatch = re.search( '([a-z]{3})_', strT )
+	sh( encurl( c_strURLKEGG + pMatch.group( 1 ) + "/", strT ) + " > " + strT )
 
 def funcOrgGenome( target, source, env ):
 	'''
@@ -173,10 +187,12 @@ pE.Command( c_strFileOrgsHCTXT, [c_strProgGenome2Orgs, c_strFileGenome], funcOrg
 
 for strOrganisms in c_astrOrganisms:
 	astrShredded = []
+	astrPathways = []
 	for strLine in open( strOrganisms ):
 		strLine = strLine.strip( )
 		if strLine[0] == "#":
 			continue
+
 		strOrg, strAmt = strLine.split( "\t" )
 		strTXT, strGenome, strShred = (( c_strDirOutput + strOrg + strCur ) for strCur in
 			(c_strTXT, c_strGenome, c_strShred))
@@ -186,6 +202,11 @@ for strOrganisms in c_astrOrganisms:
 		pE.Command( [strOne, strTwo], [c_strProgMAQ, strGenome, c_strFileModelDAT], funcMAQShred )
 		pE.Command( strShred, [c_strProgTrimmer, c_strProgFQ2FA, strOne, strTwo], funcJoinPE )
 		astrShredded.append( strShred )
+
+		strPathway = c_strDirOutput + strOrg + c_strPathway + c_strLIST
+		astrPathways.append( strPathway )
+		pE.Command( strPathway, None, funcOrgFile )
+
 # Finally build rules for each type of mock community, even and staggered
 	for i in range( len( c_astrTypes ) ):
 		def funcMix( target, source, env, iMix = i ):
@@ -194,8 +215,22 @@ for strOrganisms in c_astrOrganisms:
 			strMixer, strOrgs, astrShredded = astrSs[0], astrSs[1], astrSs[2:]
 			sh( " ".join( [strMixer, str(c_iReads), str(iMix)] + astrShredded ) + " < " +
 				strOrgs + " > " + strT )
+		
+		def funcAbdCov( target, source, env, iMix = i ):
+
+			strT, astrSs = ts( target, source )
+			strProg, strOrganisms, astrPathways = astrSs[0], astrSs[1], astrSs[2:]
+			sh( " ".join( [strProg, str(iMix)] + astrPathways +
+				["<", strOrganisms, ">", strT] ) )
 
 		strMock = c_strDirOutput + strOrganisms.replace( c_strOrganisms, "%s%s_" %
 			tuple((c_strMock, c_astrTypes[i])) )
 		pE.Command( strMock, [c_strProgMixer, strOrganisms] + astrShredded, funcMix )
 		Default( strMock )
+
+		strCov = strMock.replace( c_strTXT, c_strCov + c_strTXT )
+		pE.Command( strCov, [C_strProgCov, strOrganisms] + astrPathways, funcAbdCov )
+		Default( strCov )
+		strAbd = strCov.replace( c_strCov, c_strAbd )
+		pE.Command( strAbd, [C_strProgAbd, strOrganisms] + astrPathways, funcAbdCov )
+		Default( strAbd )

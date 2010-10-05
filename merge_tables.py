@@ -24,9 +24,9 @@ for iTable in range( len( astrTables ) ):
 sys.stdout.write( "ID" )
 for iTable in range( len( astrTables ) ):
 	astrHeaders = [astrTables[iTable]] + aastrHeaders[iTable][1:]
-	pMatch = re.search( '^(?:.*\/)?(.+)_\d+[a-z]*-', astrHeaders[0] )
+	pMatch = re.search( '^(?:.*\/)?(.+)_\d+[a-z]*(-[^.]+)?', astrHeaders[0] )
 	if pMatch:
-		astrHeaders[0] = pMatch.group( 1 )
+		astrHeaders[0] = pMatch.group( 1 ) + ( pMatch.group( 2 ) or "" )
 	pMatch = re.search( '(\d+)_alignments(\d+)', astrHeaders[0] )
 	if pMatch:
 		astrHeaders[0] = pMatch.group( 1 ) + " " + pMatch.group( 2 )
