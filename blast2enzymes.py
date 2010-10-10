@@ -4,6 +4,8 @@ import array
 import math
 import sys
 
+c_iLength	= 10
+
 def enhash( strID, hashIDs, astrIDs, apScores = None ):
 	
 	iID = hashIDs.get( strID )
@@ -15,15 +17,19 @@ def enhash( strID, hashIDs, astrIDs, apScores = None ):
 		
 	return iID
 
-if len( sys.argv ) != 2:
-	raise Exception( "Usage: blast2enzymes.py <koc> < <blast.txt>" )
+if len( sys.argv ) < 2:
+	raise Exception( "Usage: blast2enzymes.py <koc> [filter] [mblastx] < <blast.txt>" )
 strKOC = sys.argv[1]
+dFilter = 0 if ( len( sys.argv ) <= 2 ) else float(sys.argv[2])
+fMBlastX = False if ( len( sys.argv ) <= 3 ) else ( int(sys.argv[3]) != 0 )
 
+hashCOK = {}
 hashKOC = {}
 for strLine in open( strKOC ):
 	astrLine = strLine.rstrip( ).split( "\t" )
 	hashKOC[astrLine[0]] = hashKO = {}
 	for strToken in astrLine[1:]:
+		hashCOK.setdefault( strToken, set() ).add( astrLine[0] )
 		strOrg, strGene = strToken.split( "#" )
 		hashKO.setdefault( strOrg.lower( ), set() ).add( strGene.upper( ) )
 
@@ -36,16 +42,28 @@ pTos = array.array( "L" )
 pScores = array.array( "f" )
 for strLine in sys.stdin:
 	strLine = strLine.rstrip( )
-	if strLine[0] == "#":
+	if ( not strLine ) or ( strLine[0] == "#" ):
 		continue
 	astrLine = strLine.split( "\t" )
-	strTo, strFrom, strScore = astrLine[0], astrLine[2], astrLine[-1]
+	if not astrLine[0]:
+		continue
+	try:
+		strTo, strFrom, strID, strScore = (astrLine[1], astrLine[0], astrLine[4], astrLine[2]) \
+			if fMBlastX else (astrLine[0], astrLine[2], astrLine[7], astrLine[-1])
+	except IndexError:
+		sys.stderr.write( "%s\n" % astrLine )
+		continue
 	if strTo.find( ":" ) < 0:
 		continue
 	try:
 		dScore = float(strScore)
 	except ValueError:
 		continue
+	if dFilter:
+		dID = float(strID) / 100
+		if ( dFilter > 0 ) and ( dID >= dFilter ):
+			continue
+	strFrom = strFrom[:c_iLength]
 	iTo = enhash( strTo, hashTos, astrTos )
 	iFrom = enhash( strFrom, hashFroms, astrFroms, apScores )
 	iScore = len( pTos )
@@ -54,25 +72,11 @@ for strLine in sys.stdin:
 	pScores.append( math.exp( -dScore ) )
 hashhashOrgs = {}
 for iFrom in range( len( astrFroms ) ):
-	"""
-	c_iCutoff = 50
-	if len( hashAlignments ) > c_iCutoff:
-		adValues = sorted( hashAlignments.values( ), reverse = True )
-		dCutoff = adValues[c_iCutoff]
-		hashNew = {}
-		for strCur, dCur in hashAlignments.items( ):
-			if dCur > dCutoff:
-				hashNew[strCur] = dCur
-		hashAlignments = hashNew
-	hashNew = {}
-	for strCur, dCur in hashAlignments.items( ):
-		if strCur.find( ":" ) >= 0:
-			hashNew[strCur] = dCur
-	hashAlignments = hashNew
-	"""
-	dSum = sum( (pScores[i] for i in apScores[iFrom]) )
-#	sys.stderr.write( "%s\t%g\n" % (strFrom, dSum) )
-	for iScore in apScores[iFrom]:
+# Keep only hits that correspond to at least one KO
+	aiScores = filter( lambda i: hashCOK.get( astrTos[pTos[i]].upper( ).replace( ":", "#", 1 ) ),
+		apScores[iFrom] )
+	dSum = sum( (pScores[i] for i in aiScores) )
+	for iScore in aiScores:
 		iCur, dCur = (pArray[iScore] for pArray in (pTos, pScores))
 		strOrg, strGene = astrTos[iCur].split( ":" )
 		strGene = strGene.upper( )

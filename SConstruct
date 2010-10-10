@@ -7,16 +7,16 @@ import sys
 def isexclude( strInput ):
 
 	return (
-		False
+#		False
 #		( strInput.find( "338793263-700106436" ) < 0 ) and ( strInput.find( "mock" ) < 0 ) and
 #		not re.search( '[a-z]-7\d+-7\d+', strInput )
-#		strInput.find( "mock" ) < 0
+		strInput.find( "mock_" ) < 0
 	)
 
 class CProcessor:
 
 	def __init__( pSelf, strFrom, strTo, strID, strProcessor, astrDeps,
-		fInput = False ):
+		astrArgs = [], fInput = False ):
 
 		pSelf.m_strSuffix = pSelf.m_strFrom = None
 		if fInput:
@@ -27,6 +27,7 @@ class CProcessor:
 		pSelf.m_strID = strID
 		pSelf.m_strProcessor = strProcessor
 		pSelf.m_astrDeps = astrDeps
+		pSelf.m_astrArgs = astrArgs
 
 	def deps( pSelf ):
 
@@ -55,6 +56,19 @@ class CProcessor:
 		return re.sub( '_' + pSelf.m_strTo + '(.*)-' + pSelf.m_strID,
 			( "_" + pSelf.m_strFrom + "\\1" ) if pSelf.m_strFrom else "",
 			strOut )
+		
+	def cmd( pSelf ):
+		
+		return " ".join( pSelf.deps( ) + pSelf.m_astrArgs )
+
+	def ex( pSelf ):
+		
+		def rn( target, source, env, pSelf = pSelf ):
+		
+			strCmd, strT, astrSs = cts( target, source )
+			ex( " ".join( (strCmd, astrSs[0], "|", pSelf.cmd( ), ">", strT) ) )
+			
+		return rn
 
 c_strDirInput				= "data"
 c_strDirOutput				= "output"
@@ -68,8 +82,6 @@ c_strFileECC				= "ecc"
 c_strFileKEGGC				= "keggc"
 logging.basicConfig( filename = "provenance.txt", level = logging.INFO, format = '%(asctime)s %(levelname)-8s %(message)s' )
 c_logrFileProvenanceTxt		= logging.getLogger( )
-#c_logrFileProvenanceTxt.addHandler( logging.handlers.RotatingFileHandler( "provenance.txt" ) )
-#c_logrFileProvenanceTxt.setLevel( logging.INFO )
 c_strProgKO2KOC				= "./ko2koc.rb"
 c_strProgKO2KEGGC			= "./ko2keggc.rb"
 c_strProgKO2COGC			= "./ko2cogc.rb"
@@ -81,47 +93,95 @@ c_strProgZero				= "./zero.py"
 c_strSuffixOutput			= ".txt"
 c_strMock					= "mock"
 c_apProcessors				= [
-# Preliminary validation
+#===============================================================================
+# mapx 100 samples
+#===============================================================================
 	CProcessor( ".txt.bz2",			"01",	"keg",	"./blast2enzymes.py",
-		[c_strFileKOC],		True ),
-# Preliminary validation
-	CProcessor( ".txt.gz",			"01",	"keg",	"./blast2enzymes.py",
-		[c_strFileKOC],		True ),
-# Preliminary validation
-	CProcessor( ".alignments.gz",	"01",	"keg",	"./blast2enzymes.py",
-		[c_strFileKOC],		True ),
-# Unvalidated
+		[c_strFileKOC],		[],		True ),
+#===============================================================================
+# mapx synthetic community
+#===============================================================================
+# No reason to include identical hits
+#	CProcessor( ".txt.gz",			"01",	"keg",	"./blast2enzymes.py",
+#		[c_strFileKOC],		[],		True ),
+	CProcessor( ".txt.gz",			"01",	"kna",	"./blast2enzymes.py",
+		[c_strFileKOC],		["1"],		True ),
+	CProcessor( ".txt.gz",			"01",	"knb",	"./blast2enzymes.py",
+		[c_strFileKOC],		["0.98"],	True ),
+	CProcessor( ".txt.gz",			"01",	"knc",	"./blast2enzymes.py",
+		[c_strFileKOC],		["0.9"],	True ),
+#===============================================================================
+# mblastx synthetic community
+#===============================================================================
+# No reason to include identical hits
+#	CProcessor( "_mblastxv2.0.8.gz",	"01",	"keg",	"./blast2enzymes.py",
+#		[c_strFileKOC],		["0", "1"],	True ),
+	CProcessor( "_mblastxv2.0.8.gz",	"01",	"knb",	"./blast2enzymes.py",
+		[c_strFileKOC],		["0.98", "1"],	True ),
+	CProcessor( "_mblastxv2.0.8.gz",	"01",	"knc",	"./blast2enzymes.py",
+		[c_strFileKOC],		["0.9", "1"],	True ),
+#===============================================================================
+# mapx 5 samples
+#===============================================================================
+#	CProcessor( ".alignments.gz",	"01",	"keg",	"./blast2enzymes.py",
+#		[c_strFileKOC],		[],		True ),
+#===============================================================================
+# annotations mock communities
+#===============================================================================
 	CProcessor( ".tab",				"01",	"keg",	"./tab2enzymes.py",
-		[c_strInputMockrefs],	True ),
-# Unvalidated
+		[c_strInputMockrefs],	[],	True ),
 	CProcessor( ".jgi",				"01",	"keg",	"./jgi2enzymes.py",
-		[c_strFileCOGC],	True ),
-# Unvalidated
+		[c_strFileCOGC],	[],		True ),
 	CProcessor( ".jcvi",			"01",	"keg",	"./jcvi2enzymes.py",
-		[c_strFileECC],		True ),
-# Unvalidated
-	CProcessor( "01",	"02",	"nve",	"./enzymes2pathways.py",
-		[c_strFileKEGGC] ),
-# Preliminary validation
+		[c_strFileECC],		[],		True ),
+#===============================================================================
+# enzymes -> pathways
+#===============================================================================
+# No reason to exclude MinPath
+#	CProcessor( "01",	"02",	"nve",	"./enzymes2pathways.py",
+#		[c_strFileKEGGC] ),
 	CProcessor( "01",	"02",	"mpt",	"./enzymes2pathways_mp.py",
 		[] ),
-# Preliminary validation
-	CProcessor( "02",	"03a",	"nve",	"./smooth.py",
-		[c_strFileKEGGC] ),
-# Preliminary validation
+#===============================================================================
+# smoothing
+#===============================================================================
+# Witten-Bell doesn't help more than naive smoothing
+#	CProcessor( "02",	"03a",	"nve",	"./smooth.py",
+#		[c_strFileKEGGC] ),
+# No smoothing at all is terrible
+#	CProcessor( "02",	"03a",	"nul",	"./cat.py",
+#		[c_strFileKEGGC] ),
 	CProcessor( "02",	"03a",	"wbl",	"./smooth_wb.py",
 		[c_strFileKEGGC] ),
-# Unvalidated
+#===============================================================================
+# gap filling
+#===============================================================================
+# No gap filling is much worse than naive gap filling
+#	CProcessor( "03a",	"03b",	"nul",	"./cat.py",
+#		[] ),
 	CProcessor( "03a",	"03b",	"nve",	"./gapfill.py",
 		[c_strFileKEGGC] ),
-# Validated
-	CProcessor( "03a",	"03b",	"nul",	"./cat.py",
+#===============================================================================
+# re-smoothing
+#===============================================================================
+# Xipe at this stage hurts performance (too many rare enzymes lost)
+#	CProcessor( "03b",	"03c",	"xpe",	"./trim_xp.py",
+#		[] ),
+	CProcessor( "03b",	"03c",	"nul",	"./cat.py",
+		[] ),
+#===============================================================================
+# COVERAGE
+#===============================================================================
+	CProcessor( "03c",	"03d",	"nve",	"./pathcov.py",
 		[c_strFileKEGGC] ),
-# Unvalidated
-	CProcessor( "03b",	"04a",	"nve",	"./pathcov.py",
-		[c_strFileKEGGC] ),
-# Unvalidated
-	CProcessor( "03b",	"04b",	"nve",	"./pathab.py",
+	CProcessor( "03d",	"04a",	"nul",	"./cat.py",
+		[] ),
+	CProcessor( "03d",	"04a",	"xpe",	"./pathcov_xp.py",
+		[] ),
+#===============================================================================
+# ABUNDANCE
+#===============================================================================
+	CProcessor( "03c",	"04b",	"nve",	"./pathab.py",
 		[c_strFileKEGGC] ),
 ]
 c_aastrFinalizers			= [
@@ -148,19 +208,23 @@ def ts( astrTargets, astrSources ):
 	
 	return (str(astrTargets[0]), [pF.get_abspath( ) for pF in astrSources]) 
 
-pE = Environment( )
-pE.Decider( "timestamp-newer" )
+def cts( astrTargets, astrSources ):
 
-def rn( target, source, env ):
-
-	strT, astrSs = ts( target, source )
+	strT, astrSs = ts( astrTargets, astrSources )
 	strCmd = "cat"
 	if astrSs[0].find( ".gz" ) >= 0:
 		strCmd = "z" + strCmd
 	elif astrSs[0].find( ".bz2" ) >= 0:
 		strCmd = "bunzip2 -c"
-	ex( " ".join( [strCmd, astrSs[0], "|", astrSs[1]] + astrSs[2:] ) + " > " +
-		strT )
+	return (strCmd, strT, astrSs)
+
+pE = Environment( )
+pE.Decider( "timestamp-newer" )
+
+def rn( target, source, env ):
+
+	strCmd, strT, astrSs = cts( target, source )
+	ex( " ".join( [strCmd, astrSs[0], "|"] +  astrSs[1:] + [">", strT] ) )
 
 def funcFileKO( target, source, env ):
 	ex( "wget ftp://ftp.genome.jp/pub/kegg/genes/ko" )
@@ -185,7 +249,7 @@ while len( astrFrom ) > 0:
 #				sys.stderr.write( "%s\n" % [strFrom, strTo, pProc.out2in( strTo )] )
 				fHit = True
 				astrNew.append( strTo )
-				pE.Command( strTo, [strFrom] + pProc.deps( ), rn )
+				pE.Command( strTo, [strFrom] + pProc.deps( ), pProc.ex( ) )
 		if not fHit:
 			astrTo.append( strFrom )
 	astrFrom = astrNew
