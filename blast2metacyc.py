@@ -1,64 +1,99 @@
 #!/usr/bin/env python
 
-from optparse import OptionParser
+import array
+import math
+import sys
 
-def parse_uniprot_metacyc_map( filename ):
-    tabfile = open(filename, 'r')
-    uniprot_metacyc_map = {}
-    header = tabfile.readline()
-    rxns = {}
-    for line in  tabfile:
-        rxn_enz = line.split('\t')
-        rxn, ec = rxn_enz[:2]
-        rxns[(rxn, ec)] = {}
-        for enz in rxn_enz[2:]:
-            rxns[(rxn,ec)][enz] = 0
-            rxns[(rxn,ec)]['total'] = 0
-            if enz in uniprot_metacyc_map:
-                uniprot_metacyc_map[enz].append( (rxn, ec) )
-            else:
-                uniprot_metacyc_map[enz] = [(rxn, ec)]
-                
-    return uniprot_metacyc_map, rxns
+c_iLength	= 10
 
+def enhash( strID, hashIDs, astrIDs, apScores = None ):
+	
+	iID = hashIDs.get( strID )
+	if iID == None:
+		hashIDs[strID] = iID = len( hashIDs )
+		astrIDs.append( strID )
+		if apScores != None:
+			apScores.append( array.array( "L" ) )
+		
+	return iID
 
-def parse_uniprot( line ):
-    cols = line.split('\t')
-    return cols[0].split('|')
-    
-    
-def parse_annotation( annotationfile, uniprot_metacyc, rxns ):
-    annot = open(annotationfile, 'r')
-    for line in annot:
-        for uniprot in parse_uniprot( line ):
-            if uniprot in uniprot_metacyc:
-                for rxn, ec in uniprot_metacyc[uniprot]:
-                    rxns[(rxn,ec)][uniprot] +=1
-                    rxns[(rxn,ec)]['total'] +=1
-    return rxns
+if len( sys.argv ) < 2:
+	raise Exception( "Usage: blast2metacyc.py <mcc> [filter] [mblastx] [topn] < <blast.txt>" )
+strMCC = sys.argv[1]
+dFilter = 0 if ( len( sys.argv ) <= 2 ) else float(sys.argv[2])
+fMBlastX = False if ( len( sys.argv ) <= 3 ) else ( int(sys.argv[3]) != 0 )
+iTopN = -1 if ( len( sys.argv ) <= 4 ) else int(sys.argv[4])
 
+hashCCM = {}
+hashMCC = {}
+for strLine in open( strMCC ):
+	astrLine = strLine.rstrip( ).split( "\t" )
+	strID, astrGenes = astrLine[0], astrLine[1:]
+	hashMCC[strID] = astrGenes
+	for strGene in astrGenes:
+		hashCCM.setdefault( strGene, set() ).add( strID )
 
-def write_abundances( filename, abundance ):
-    out = open(filename, 'w')
-    out.write('Rxn\tEC\tTotal abundance\tper enzyme abundances\n')
-    
-    for rxn, ec in sorted( abundance.keys(), cmp=lambda x,y: -cmp(abundance[x]['total'], abundance[y]['total'])):
-        out.write('%s\t%s' % (rxn, ec) )
-        for enz in sorted( abundance[(rxn,ec)], cmp=lambda x,y: -cmp(abundance[(rxn, ec)][x], abundance[(rxn, ec)][y])):
-            out.write('\t%s:%d' % (enz, abundance[(rxn,ec)][enz]))
-        out.write('\n')
-    out.close()
+hashFroms = {}
+hashTos = {}
+astrTos = []
+astrFroms = []
+apScores = []
+pTos = array.array( "L" )
+pScores = array.array( "f" )
+for strLine in sys.stdin:
+	strLine = strLine.rstrip( )
+	if ( not strLine ) or ( strLine[0] == "#" ):
+		continue
+	astrLine = strLine.split( "\t" )
+	if not astrLine[0]:
+		continue
+	try:
+		strTo, strFrom, strID, strScore = (astrLine[1], astrLine[0], astrLine[4], astrLine[2]) \
+			if fMBlastX else (astrLine[0], astrLine[2], astrLine[7], astrLine[-1])
+	except IndexError:
+		sys.stderr.write( "%s\n" % astrLine )
+		continue
+	if strTo not in hashCCM:
+		continue
+	try:
+		dScore = float(strScore)
+	except ValueError:
+		continue
+	if dFilter:
+		dID = float(strID) / 100
+		if ( dFilter > 0 ) and ( dID >= dFilter ):
+			continue
+	strFrom = strFrom[:c_iLength]
+	iTo = enhash( strTo, hashTos, astrTos )
+	iFrom = enhash( strFrom, hashFroms, astrFroms, apScores )
+	iScore = len( pTos )
+	apScores[iFrom].append( len( pTos ) )
+	pTos.append( iTo )
+	pScores.append( math.exp( -dScore ) )
+hashGenes = {}
+for iFrom in range( len( astrFroms ) ):
+	aiScores = apScores[iFrom]
+	if iTopN > 0:
+		aiScores = sorted( aiScores, lambda iOne, iTwo: cmp( pScores[iTwo], pScores[iOne] ) )
+		aiScores = aiScores[:iTopN]
+# Keep only hits that correspond to at least one reaction
+	aiScores = filter( lambda i: hashCCM.get( astrTos[pTos[i]] ), aiScores )
+	dSum = sum( (pScores[i] for i in aiScores) )
+	for iScore in aiScores:
+		iCur, dCur = (pArray[iScore] for pArray in (pTos, pScores))
+		strGene = astrTos[iCur]
+		hashGenes[strGene] = ( dCur / dSum ) + hashGenes.get( strGene, 0 )
 
-def parseOptions():
-    parser = OptionParser()
-    parser.add_option("-u", "--uniprot", dest="uniprot_metacyc_mapfile", help="location of Uniprot-MetaCyc mappings file", metavar="UNIPROT-METACYC-MAP")
-    parser.add_option("-a", "--alignments", dest="alignmentsfile", help="location of alignments", metavar="ALIGNMENTS")
-    parser.add_option("-o", "--output", dest="outputfile", help="name of outputfile", metavar="OUTPUT")
-    return parser.parse_args()
+hashScores = {}
+dSum = 0
+for strMC, astrGenes in hashMCC.items( ):
+	dScore = 0
+	for strGene in astrGenes:
+		dScore += hashGenes.get( strGene, 0 )
+	if dScore > 0:
+		hashScores[strMC] = dScore
+		dSum += dScore
 
-
-if __name__ == '__main__':
-    options, args = parseOptions()
-    uniprot_metacyc_map, rxns = parse_uniprot_metacyc_map( options.uniprot_metacyc_mapfile )
-    abundances = parse_annotation( options.alignmentsfile, uniprot_metacyc_map, rxns )
-    write_abundances( options.outputfile, abundances )
+print( "GID	Abundance" )
+for strMC, dScore in hashScores.items( ):
+	print( "\t".join( (strMC, str(dScore)) ) ) # / dSum)) ) )

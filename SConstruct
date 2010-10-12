@@ -1,5 +1,6 @@
 import logging
 import logging.handlers
+import os
 import re
 import subprocess
 import sys
@@ -7,10 +8,10 @@ import sys
 def isexclude( strInput ):
 
 	return (
-#		False
+		False
 #		( strInput.find( "338793263-700106436" ) < 0 ) and ( strInput.find( "mock" ) < 0 ) and
 #		not re.search( '[a-z]-7\d+-7\d+', strInput )
-		strInput.find( "mock_" ) < 0
+#		strInput.find( "mock_" ) < 0
 	)
 
 class CProcessor:
@@ -76,16 +77,24 @@ c_strDirSynth				= "synth"
 c_strInputMapKEGG			= "map_kegg.txt"
 c_strInputMockrefs			= "mockrefs/mockrefs.txt"
 c_strFileKO					= "ko"
+c_strFileMetaCyc			= "meta.tar.gz"
+c_strFileMetaCycGenes		= "uniprot-seq-ids.dat"
+c_strFileMetaCycPaths		= "pathways.dat"
 c_strFileKOC				= "koc"
+c_strFileMCC				= "mcc"
+c_strFileMCPC				= "mcpc"
 c_strFileCOGC				= "cogc"
 c_strFileECC				= "ecc"
 c_strFileKEGGC				= "keggc"
+c_strFilePathwayC			= "pathwayc"
 logging.basicConfig( filename = "provenance.txt", level = logging.INFO, format = '%(asctime)s %(levelname)-8s %(message)s' )
 c_logrFileProvenanceTxt		= logging.getLogger( )
 c_strProgKO2KOC				= "./ko2koc.rb"
 c_strProgKO2KEGGC			= "./ko2keggc.rb"
 c_strProgKO2COGC			= "./ko2cogc.rb"
 c_strProgKO2ECC				= "./ko2ecc.rb"
+c_strProgMetaCyc2MCC		= "./metacyc2mcc.py"
+c_strProgMetaCyc2MCPC		= "./metacyc2mcpc.py"
 c_strProgMerge				= "./merge_tables.py"
 c_strProgName				= "./postprocess_names.rb"
 c_strProgNormalize			= "./normalize.py"
@@ -104,22 +113,30 @@ c_apProcessors				= [
 # No reason to include identical hits
 #	CProcessor( ".txt.gz",			"01",	"keg",	"./blast2enzymes.py",
 #		[c_strFileKOC],		[],		True ),
+# Keeping just the top 20 hits doesn't generally hurt performance
+#	CProcessor( ".txt.gz",			"01",	"ktt",	"./blast2enzymes.py",
+#		[c_strFileKOC],		["0.98", "0", "20"],	True ),
 	CProcessor( ".txt.gz",			"01",	"kna",	"./blast2enzymes.py",
 		[c_strFileKOC],		["1"],		True ),
 	CProcessor( ".txt.gz",			"01",	"knb",	"./blast2enzymes.py",
 		[c_strFileKOC],		["0.98"],	True ),
-	CProcessor( ".txt.gz",			"01",	"knc",	"./blast2enzymes.py",
-		[c_strFileKOC],		["0.9"],	True ),
+	CProcessor( ".txt.gz",			"11",	"mtc",	"./blast2metacyc.py",
+		[c_strFileMCC],		[],			True ),
 #===============================================================================
 # mblastx synthetic community
 #===============================================================================
 # No reason to include identical hits
 #	CProcessor( "_mblastxv2.0.8.gz",	"01",	"keg",	"./blast2enzymes.py",
 #		[c_strFileKOC],		["0", "1"],	True ),
+# Keeping just the top 20 hits doesn't generally hurt performance
+#	CProcessor( "_mblastxv2.0.8.gz",	"01",	"ktt",	"./blast2enzymes.py",
+#		[c_strFileKOC],		["0.98", "1", "20"],	True ),
 	CProcessor( "_mblastxv2.0.8.gz",	"01",	"knb",	"./blast2enzymes.py",
 		[c_strFileKOC],		["0.98", "1"],	True ),
 	CProcessor( "_mblastxv2.0.8.gz",	"01",	"knc",	"./blast2enzymes.py",
 		[c_strFileKOC],		["0.9", "1"],	True ),
+	CProcessor( "_mblastxv2.0.8.gz",	"11",	"mtc",	"./blast2metacyc.py",
+		[c_strFileMCC],		["0", "1"],		True ),
 #===============================================================================
 # mapx 5 samples
 #===============================================================================
@@ -137,22 +154,22 @@ c_apProcessors				= [
 #===============================================================================
 # enzymes -> pathways
 #===============================================================================
-# No reason to exclude MinPath
-#	CProcessor( "01",	"02",	"nve",	"./enzymes2pathways.py",
-#		[c_strFileKEGGC] ),
+# MinPath doesn't currently run on MetaCyc, so we include the naive version
+	CProcessor( "11",	"02",	"nve",	"./enzymes2pathways.py",
+		[c_strFilePathwayC] ),
 	CProcessor( "01",	"02",	"mpt",	"./enzymes2pathways_mp.py",
 		[] ),
 #===============================================================================
 # smoothing
 #===============================================================================
-# Witten-Bell doesn't help more than naive smoothing
+# Witten-Bell doesn't actually help more than naive smoothing
 #	CProcessor( "02",	"03a",	"nve",	"./smooth.py",
-#		[c_strFileKEGGC] ),
+#		[c_strFilePathwayC] ),
 # No smoothing at all is terrible
 #	CProcessor( "02",	"03a",	"nul",	"./cat.py",
-#		[c_strFileKEGGC] ),
+#		[c_strFilePathwayC] ),
 	CProcessor( "02",	"03a",	"wbl",	"./smooth_wb.py",
-		[c_strFileKEGGC] ),
+		[c_strFilePathwayC] ),
 #===============================================================================
 # gap filling
 #===============================================================================
@@ -160,7 +177,7 @@ c_apProcessors				= [
 #	CProcessor( "03a",	"03b",	"nul",	"./cat.py",
 #		[] ),
 	CProcessor( "03a",	"03b",	"nve",	"./gapfill.py",
-		[c_strFileKEGGC] ),
+		[c_strFilePathwayC] ),
 #===============================================================================
 # re-smoothing
 #===============================================================================
@@ -172,17 +189,18 @@ c_apProcessors				= [
 #===============================================================================
 # COVERAGE
 #===============================================================================
+# Xipe at this stage doesn't affect performance
+#	CProcessor( "03d",	"04a",	"nul",	"./cat.py",
+#		[] ),
 	CProcessor( "03c",	"03d",	"nve",	"./pathcov.py",
-		[c_strFileKEGGC] ),
-	CProcessor( "03d",	"04a",	"nul",	"./cat.py",
-		[] ),
+		[c_strFilePathwayC] ),
 	CProcessor( "03d",	"04a",	"xpe",	"./pathcov_xp.py",
 		[] ),
 #===============================================================================
 # ABUNDANCE
 #===============================================================================
 	CProcessor( "03c",	"04b",	"nve",	"./pathab.py",
-		[c_strFileKEGGC] ),
+		[c_strFilePathwayC] ),
 ]
 c_aastrFinalizers			= [
 	["04a",	c_strProgZero],
@@ -197,6 +215,10 @@ for pFile in Glob( c_strDirInput + "/*" ):
 		if ( not isexclude( strFile ) ) and pProc.in2out( strFile ):
 			c_astrInput.append( strFile )
 			break
+
+#===============================================================================
+# Utilities
+#===============================================================================
 
 def ex( strCmd ):
 
@@ -218,16 +240,20 @@ def cts( astrTargets, astrSources ):
 		strCmd = "bunzip2 -c"
 	return (strCmd, strT, astrSs)
 
-pE = Environment( )
-pE.Decider( "timestamp-newer" )
-
 def rn( target, source, env ):
 
 	strCmd, strT, astrSs = cts( target, source )
 	ex( " ".join( [strCmd, astrSs[0], "|"] +  astrSs[1:] + [">", strT] ) )
 
+pE = Environment( )
+pE.Decider( "make" )
+
+#===============================================================================
+# KEGG
+#===============================================================================
+
 def funcFileKO( target, source, env ):
-	ex( "wget ftp://ftp.genome.jp/pub/kegg/genes/ko" )
+	ex( "wget -N ftp://ftp.genome.jp/pub/kegg/genes/ko" )
 pE.Command( c_strFileKO, None, funcFileKO )
 pE.NoClean( c_strFileKO )
 
@@ -236,6 +262,42 @@ for astrKO in ([c_strFileKOC, c_strProgKO2KOC],
 	[c_strFileECC, c_strProgKO2ECC]):
 	pE.Command( astrKO[0], [c_strFileKO] + astrKO[1:], rn )
 	pE.NoClean( astrKO[0] )
+
+#===============================================================================
+# MetaCyc
+#===============================================================================
+
+def funcFileMetaCyc( target, source, env ):
+	strT, astrSs = ts( target, source )
+	ex( "wget -N http://brg.ai.sri.com/ecocyc/dist/flatfiles-52983746/" +
+		os.path.basename( strT ) )
+pE.Command( c_strFileMetaCyc, None, funcFileMetaCyc )
+pE.NoClean( c_strFileMetaCyc )
+def funcFileMetaCycFile( target, source, env ):
+	strT, astrSs = ts( target, source )
+	strOut, strIn = os.path.basename( strT ), astrSs[0]
+	strPath = "14.5/data/"
+	ex( "tar -mxzf " + strIn + " " + strPath + strOut )
+	ex( "mv " + strPath + strOut + " " + strT )
+for strFile in (c_strFileMetaCycGenes, c_strFileMetaCycPaths):
+	pE.Command( strFile, [c_strFileMetaCyc], funcFileMetaCycFile )
+	pE.NoClean( strFile )
+
+for astrMC in ([c_strFileMCC, c_strFileMetaCycGenes, c_strProgMetaCyc2MCC],
+	[c_strFileMCPC, c_strFileMetaCycPaths, c_strProgMetaCyc2MCPC]):
+	strOut, strIn, strProg = astrMC
+	pE.Command( strOut, [strIn, strProg], rn )
+	pE.NoClean( strOut )
+
+def funcPathways( target, source, env ):
+	strT, astrSs = ts( target, source )
+	ex( " ".join( ["cat"] + astrSs + [">", strT] ) )
+pE.Command( c_strFilePathwayC, [c_strFileKEGGC, c_strFileMCPC], funcPathways )
+pE.NoClean( c_strFilePathwayC )
+
+#===============================================================================
+# Processors
+#===============================================================================
 
 astrFrom = c_astrInput
 astrTo = []

@@ -18,10 +18,11 @@ def enhash( strID, hashIDs, astrIDs, apScores = None ):
 	return iID
 
 if len( sys.argv ) < 2:
-	raise Exception( "Usage: blast2enzymes.py <koc> [filter] [mblastx] < <blast.txt>" )
+	raise Exception( "Usage: blast2enzymes.py <koc> [filter] [mblastx] [topn] < <blast.txt>" )
 strKOC = sys.argv[1]
 dFilter = 0 if ( len( sys.argv ) <= 2 ) else float(sys.argv[2])
 fMBlastX = False if ( len( sys.argv ) <= 3 ) else ( int(sys.argv[3]) != 0 )
+iTopN = -1 if ( len( sys.argv ) <= 4 ) else int(sys.argv[4])
 
 hashCOK = {}
 hashKOC = {}
@@ -72,9 +73,13 @@ for strLine in sys.stdin:
 	pScores.append( math.exp( -dScore ) )
 hashhashOrgs = {}
 for iFrom in range( len( astrFroms ) ):
+	aiScores = apScores[iFrom]
+	if iTopN > 0:
+		aiScores = sorted( aiScores, lambda iOne, iTwo: cmp( pScores[iTwo], pScores[iOne] ) )
+		aiScores = aiScores[:iTopN]
 # Keep only hits that correspond to at least one KO
 	aiScores = filter( lambda i: hashCOK.get( astrTos[pTos[i]].upper( ).replace( ":", "#", 1 ) ),
-		apScores[iFrom] )
+		aiScores )
 	dSum = sum( (pScores[i] for i in aiScores) )
 	for iScore in aiScores:
 		iCur, dCur = (pArray[iScore] for pArray in (pTos, pScores))
