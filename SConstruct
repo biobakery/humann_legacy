@@ -107,6 +107,8 @@ c_apProcessors				= [
 #===============================================================================
 	CProcessor( ".txt.bz2",			"01",	"keg",	"./blast2enzymes.py",
 		[c_strFileKOC],		[],		True ),
+	CProcessor( ".txt.bz2",			"11",	"mtc",	"./blast2metacyc.py",
+		[c_strFileMCC],		[],		True ),
 #===============================================================================
 # mapx synthetic community
 #===============================================================================
@@ -140,8 +142,10 @@ c_apProcessors				= [
 #===============================================================================
 # mapx 5 samples
 #===============================================================================
-#	CProcessor( ".alignments.gz",	"01",	"keg",	"./blast2enzymes.py",
-#		[c_strFileKOC],		[],		True ),
+	CProcessor( ".alignments.gz",	"01",	"keg",	"./blast2enzymes.py",
+		[c_strFileKOC],		[],		True ),
+	CProcessor( ".alignments.gz",	"11",	"mtc",	"./blast2metacyc.py",
+		[c_strFileKOC],		[],		True ),
 #===============================================================================
 # annotations mock communities
 #===============================================================================
