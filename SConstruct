@@ -67,7 +67,8 @@ class CProcessor:
 		def rn( target, source, env, pSelf = pSelf ):
 		
 			strCmd, strT, astrSs = cts( target, source )
-			ex( " ".join( (strCmd, astrSs[0], "|", pSelf.cmd( ), ">", strT) ) )
+			return ex( out( " ".join( (strCmd, astrSs[0], "|", pSelf.cmd( )) ),
+				strT ) )
 			
 		return rn
 
@@ -77,6 +78,7 @@ c_strDirSynth				= "synth"
 c_strInputMapKEGG			= "map_kegg.txt"
 c_strInputMockrefs			= "mockrefs/mockrefs.txt"
 c_strFileKO					= "ko"
+c_strFileGenesPEP			= "genes.pep"
 c_strFileMetaCyc			= "meta.tar.gz"
 c_strFileMetaCycGenes		= "uniprot-seq-ids.dat"
 c_strFileMetaCycPaths		= "pathways.dat"
@@ -86,19 +88,23 @@ c_strFileMCPC				= "mcpc"
 c_strFileCOGC				= "cogc"
 c_strFileECC				= "ecc"
 c_strFileKEGGC				= "keggc"
+c_strFileGeneLs				= "genels"
 c_strFilePathwayC			= "pathwayc"
-logging.basicConfig( filename = "provenance.txt", level = logging.INFO, format = '%(asctime)s %(levelname)-8s %(message)s' )
+logging.basicConfig( filename = "provenance.txt", level = logging.INFO,
+	format = '%(asctime)s %(levelname)-8s %(message)s' )
 c_logrFileProvenanceTxt		= logging.getLogger( )
-c_strProgKO2KOC				= "./ko2koc.rb"
-c_strProgKO2KEGGC			= "./ko2keggc.rb"
-c_strProgKO2COGC			= "./ko2cogc.rb"
-c_strProgKO2ECC				= "./ko2ecc.rb"
+c_strProgKO2KOC				= "./ko2koc.py"
+c_strProgKO2KEGGC			= "./ko2keggc.py"
+c_strProgKO2COGC			= "./ko2cogc.py"
+c_strProgKO2ECC				= "./ko2ecc.py"
+c_strProgGenes2GeneLs		= "./genes2ls.py"
 c_strProgMetaCyc2MCC		= "./metacyc2mcc.py"
 c_strProgMetaCyc2MCPC		= "./metacyc2mcpc.py"
 c_strProgMerge				= "./merge_tables.py"
-c_strProgName				= "./postprocess_names.rb"
+c_strProgName				= "./postprocess_names.py"
 c_strProgNormalize			= "./normalize.py"
 c_strProgZero				= "./zero.py"
+c_strProgOutput				= "./output.py"
 c_strSuffixOutput			= ".txt"
 c_strMock					= "mock"
 c_apProcessors				= [
@@ -106,46 +112,44 @@ c_apProcessors				= [
 # mapx 100 samples
 #===============================================================================
 	CProcessor( ".txt.bz2",			"01",	"keg",	"./blast2enzymes.py",
-		[c_strFileKOC],		[],		True ),
-	CProcessor( ".txt.bz2",			"11",	"mtc",	"./blast2metacyc.py",
-		[c_strFileMCC],		[],		True ),
+		[c_strFileKOC, c_strFileGeneLs],	[],		True ),
 #===============================================================================
 # mapx synthetic community
 #===============================================================================
 # No reason to include identical hits
 #	CProcessor( ".txt.gz",			"01",	"keg",	"./blast2enzymes.py",
-#		[c_strFileKOC],		[],		True ),
+#		[c_strFileKOC, c_strFileGeneLs],	[],			True ),
 # Keeping just the top 20 hits doesn't generally hurt performance
 #	CProcessor( ".txt.gz",			"01",	"ktt",	"./blast2enzymes.py",
-#		[c_strFileKOC],		["0.98", "0", "20"],	True ),
+#		[c_strFileKOC, c_strFileGeneLs],	["0.98", "0", "20"],	True ),
 	CProcessor( ".txt.gz",			"01",	"kna",	"./blast2enzymes.py",
-		[c_strFileKOC],		["1"],		True ),
+		[c_strFileKOC, c_strFileGeneLs],	["1"],		True ),
 	CProcessor( ".txt.gz",			"01",	"knb",	"./blast2enzymes.py",
-		[c_strFileKOC],		["0.98"],	True ),
+		[c_strFileKOC, c_strFileGeneLs],	["0.98"],	True ),
 	CProcessor( ".txt.gz",			"11",	"mtc",	"./blast2metacyc.py",
-		[c_strFileMCC],		[],			True ),
+		[c_strFileMCC],						[],			True ),
 #===============================================================================
 # mblastx synthetic community
 #===============================================================================
 # No reason to include identical hits
 #	CProcessor( "_mblastxv2.0.8.gz",	"01",	"keg",	"./blast2enzymes.py",
-#		[c_strFileKOC],		["0", "1"],	True ),
+#		[c_strFileKOC, c_strFileGeneLs],	["0", "1"],	True ),
 # Keeping just the top 20 hits doesn't generally hurt performance
 #	CProcessor( "_mblastxv2.0.8.gz",	"01",	"ktt",	"./blast2enzymes.py",
-#		[c_strFileKOC],		["0.98", "1", "20"],	True ),
+#		[c_strFileKOC, c_strFileGeneLs],	["0.98", "1", "20"],	True ),
 	CProcessor( "_mblastxv2.0.8.gz",	"01",	"knb",	"./blast2enzymes.py",
-		[c_strFileKOC],		["0.98", "1"],	True ),
+		[c_strFileKOC, c_strFileGeneLs],	["0.98", "1"],			True ),
 	CProcessor( "_mblastxv2.0.8.gz",	"01",	"knc",	"./blast2enzymes.py",
-		[c_strFileKOC],		["0.9", "1"],	True ),
+		[c_strFileKOC, c_strFileGeneLs],	["0.9", "1"],			True ),
 	CProcessor( "_mblastxv2.0.8.gz",	"11",	"mtc",	"./blast2metacyc.py",
-		[c_strFileMCC],		["0", "1"],		True ),
+		[c_strFileMCC],						["0", "1"],				True ),
 #===============================================================================
 # mapx 5 samples
 #===============================================================================
 	CProcessor( ".alignments.gz",	"01",	"keg",	"./blast2enzymes.py",
-		[c_strFileKOC],		[],		True ),
+		[c_strFileKOC, c_strFileGeneLs],	[],			True ),
 	CProcessor( ".alignments.gz",	"11",	"mtc",	"./blast2metacyc.py",
-		[c_strFileKOC],		[],		True ),
+		[c_strFileMCC],		[],		True ),
 #===============================================================================
 # annotations mock communities
 #===============================================================================
@@ -228,7 +232,7 @@ def ex( strCmd ):
 
 	c_logrFileProvenanceTxt.info( strCmd )
 	sys.stdout.write( "%s\n" % strCmd )
-	subprocess.call( strCmd, shell = True )
+	return subprocess.call( strCmd, shell = True )
 
 def ts( astrTargets, astrSources ):
 	
@@ -247,7 +251,11 @@ def cts( astrTargets, astrSources ):
 def rn( target, source, env ):
 
 	strCmd, strT, astrSs = cts( target, source )
-	ex( " ".join( [strCmd, astrSs[0], "|"] +  astrSs[1:] + [">", strT] ) )
+	return ex( out( " ".join( [strCmd, astrSs[0], "|"] +  astrSs[1:] ), strT ) )
+
+def out( strCmd, strFile ):
+	
+	return " ".join( (strCmd, "|", c_strProgOutput, strFile) )
 
 pE = Environment( )
 pE.Decider( "make" )
@@ -256,16 +264,18 @@ pE.Decider( "make" )
 # KEGG
 #===============================================================================
 
-def funcFileKO( target, source, env ):
-	ex( "wget -N ftp://ftp.genome.jp/pub/kegg/genes/ko" )
-pE.Command( c_strFileKO, None, funcFileKO )
-pE.NoClean( c_strFileKO )
+for astrFile in ([c_strFileKO, "ko"], [c_strFileGenesPEP, "fasta/genes.pep"]):
+	def funcFileKEGG( target, source, env, strPath = astrFile[1] ):
+		return ex( "wget -N ftp://ftp.genome.jp/pub/kegg/genes/" + strPath )
+	pE.Command( astrFile[0], None, funcFileKEGG )
+	pE.NoClean( astrFile[0] )
 
-for astrKO in ([c_strFileKOC, c_strProgKO2KOC],
-	[c_strFileKEGGC, c_strProgKO2KEGGC], [c_strFileCOGC, c_strProgKO2COGC],
-	[c_strFileECC, c_strProgKO2ECC]):
+for astrKO in ([c_strFileKOC, c_strProgKO2KOC], [c_strFileKEGGC, c_strProgKO2KEGGC],
+	[c_strFileCOGC, c_strProgKO2COGC], [c_strFileECC, c_strProgKO2ECC]):
 	pE.Command( astrKO[0], [c_strFileKO] + astrKO[1:], rn )
 	pE.NoClean( astrKO[0] )
+pE.Command( c_strFileGeneLs, [c_strFileGenesPEP, c_strProgGenes2GeneLs], rn )
+pE.NoClean( c_strFileGeneLs )
 
 #===============================================================================
 # MetaCyc
@@ -273,7 +283,7 @@ for astrKO in ([c_strFileKOC, c_strProgKO2KOC],
 
 def funcFileMetaCyc( target, source, env ):
 	strT, astrSs = ts( target, source )
-	ex( "wget -N http://brg.ai.sri.com/ecocyc/dist/flatfiles-52983746/" +
+	return ex( "wget -N http://brg.ai.sri.com/ecocyc/dist/flatfiles-52983746/" +
 		os.path.basename( strT ) )
 pE.Command( c_strFileMetaCyc, None, funcFileMetaCyc )
 pE.NoClean( c_strFileMetaCyc )
@@ -281,8 +291,8 @@ def funcFileMetaCycFile( target, source, env ):
 	strT, astrSs = ts( target, source )
 	strOut, strIn = os.path.basename( strT ), astrSs[0]
 	strPath = "14.5/data/"
-	ex( "tar -mxzf " + strIn + " " + strPath + strOut )
-	ex( "mv " + strPath + strOut + " " + strT )
+	return ( ex( "tar -mxzf " + strIn + " " + strPath + strOut ) or
+		ex( "mv " + strPath + strOut + " " + strT ) )
 for strFile in (c_strFileMetaCycGenes, c_strFileMetaCycPaths):
 	pE.Command( strFile, [c_strFileMetaCyc], funcFileMetaCycFile )
 	pE.NoClean( strFile )
@@ -295,7 +305,7 @@ for astrMC in ([c_strFileMCC, c_strFileMetaCycGenes, c_strProgMetaCyc2MCC],
 
 def funcPathways( target, source, env ):
 	strT, astrSs = ts( target, source )
-	ex( " ".join( ["cat"] + astrSs + [">", strT] ) )
+	return ex( out( " ".join( ["cat"] + astrSs ), strT ) )
 pE.Command( c_strFilePathwayC, [c_strFileKEGGC, c_strFileMCPC], funcPathways )
 pE.NoClean( c_strFilePathwayC )
 
@@ -339,8 +349,8 @@ for strType, astrType in hashTo.items( ):
 		strFinalizers = " | ".join( astrFinalizers )
 		if len( astrFinalizers ) > 0:
 			strFinalizers += " | "
-		ex( astrSs[0] + " " + " ".join( astrFiles ) + " | " + strFinalizers +
-			astrSs[1] + " " + astrSs[2] + " > " + strT )
+		return ex( out( " ".join( [astrSs[0]] + astrFiles + ["|", strFinalizers,
+			astrSs[1], astrSs[2]] ), strT ) )
 
 	pFile = pE.Command( strFile, [c_strProgMerge, c_strProgName, c_strInputMapKEGG] +
 		astrFinalizers + astrType, funcFile )
@@ -368,7 +378,8 @@ for fileSynth in Glob( "/".join( (c_strDirSynth, c_strDirOutput, c_strMock + "_*
 		
 			strT, astrSs = ts( target, source )
 			strProg = astrSs[0]
-			ex( " ".join( [strProg] + astrFiles + ["|", " | ".join( astrProgs ), ">", strT] ) )
+			return ex( out( " ".join( [strProg] + astrFiles + ["|",
+				" | ".join( astrProgs )] ), strT ) )
 
 		pFile = pE.Command( c_strDirOutput + "/" + strBase + "_" + strType + c_strSuffixOutput,
 			[c_strProgMerge] + astrProgs + [fileSynth] + astrFiles, funcMock )

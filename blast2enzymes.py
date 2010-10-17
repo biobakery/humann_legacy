@@ -18,11 +18,23 @@ def enhash( strID, hashIDs, astrIDs, apScores = None ):
 	return iID
 
 if len( sys.argv ) < 2:
-	raise Exception( "Usage: blast2enzymes.py <koc> [filter] [mblastx] [topn] < <blast.txt>" )
+	raise Exception( "Usage: blast2enzymes.py <koc> [genels] [filter] [mblastx] [topn] < <blast.txt>" )
 strKOC = sys.argv[1]
-dFilter = 0 if ( len( sys.argv ) <= 2 ) else float(sys.argv[2])
-fMBlastX = False if ( len( sys.argv ) <= 3 ) else ( int(sys.argv[3]) != 0 )
-iTopN = -1 if ( len( sys.argv ) <= 4 ) else int(sys.argv[4])
+strGeneLs = None if ( len( sys.argv ) <= 2 ) else sys.argv[2]
+dFilter = 0 if ( len( sys.argv ) <= 3 ) else float(sys.argv[3])
+fMBlastX = False if ( len( sys.argv ) <= 4 ) else ( int(sys.argv[4]) != 0 )
+iTopN = -1 if ( len( sys.argv ) <= 5 ) else int(sys.argv[5])
+
+hashGeneLs = {}
+if strGeneLs:
+	dAve = 0
+	for strLine in open( strGeneLs ):
+		strGene, strLength = strLine.strip( ).split( "\t" )
+		hashGeneLs[strGene] = iLength = int(strLength)
+		dAve += iLength
+	dAve /= float(len( hashGeneLs ))
+	for strGene, iLength in hashGeneLs.items( ):
+		hashGeneLs[strGene] = iLength / dAve
 
 hashCOK = {}
 hashKOC = {}
@@ -83,11 +95,12 @@ for iFrom in range( len( astrFroms ) ):
 	dSum = sum( (pScores[i] for i in aiScores) )
 	for iScore in aiScores:
 		iCur, dCur = (pArray[iScore] for pArray in (pTos, pScores))
-		strOrg, strGene = astrTos[iCur].split( ":" )
+		strTo = astrTos[iCur]
+		dCur /= hashGeneLs.get( strTo, 1 )
+		strOrg, strGene = strTo.split( ":" )
 		strGene = strGene.upper( )
 		hashGenes = hashhashOrgs.setdefault( strOrg, {} )
-		hashGenes[strGene] = ( dCur / dSum ) + hashGenes.get(
-			strGene, 0 )
+		hashGenes[strGene] = ( dCur / dSum ) + hashGenes.get( strGene, 0 )
 
 astrOrgs = hashhashOrgs.keys( )
 hashScores = {}
