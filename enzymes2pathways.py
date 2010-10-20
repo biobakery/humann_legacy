@@ -15,6 +15,9 @@ for strLine in open( strKEGGC ):
 
 print( "GID	Pathway	Abundance" )
 for strLine in sys.stdin:
+	if strLine and ( strLine[0] == "#" ):
+		sys.stdout.write( strLine )
+		continue
 	astrLine = strLine.strip( ).split( "\t" )
 	if astrLine[0] == "GID":
 		continue

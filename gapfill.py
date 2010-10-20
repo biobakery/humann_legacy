@@ -2,9 +2,15 @@
 
 import sys
 
-if len( sys.argv ) != 2:
-	raise Exception( "Usage: gapfill.py <keggc> < <pathways.txt>" )
+c_dIQRs		= 0
+c_fMedian	= True
+
+if len( sys.argv ) < 2:
+	raise Exception( "Usage: gapfill.py <keggc> [iqrs=" + str(c_dIQRs) + "] [median=" +
+		str(c_fMedian) + "] < <pathways.txt>" )
 strKEGGC = sys.argv[1]
+dIQRs = c_dIQRs if ( len( sys.argv ) <= 2 ) else float(sys.argv[2])
+fMedian = c_fMedian if ( len( sys.argv ) <= 3 ) else ( int(sys.argv[3]) != 0 )
 
 hashKEGGs = {}
 for strLine in open( strKEGGC ):
@@ -22,12 +28,23 @@ for strLine in sys.stdin:
 for strKEGG, hashKOs in hashScores.items( ):
 	adAbs = sorted( hashKOs.values( ) )
 	if len( adAbs ) > 3:
-		iFourth = len( adAbs ) / 4
-		d25, d50, d75 = adAbs[iFourth], adAbs[iFourth * 2], adAbs[iFourth * 3]
-#		dIQR = d75 - d25
-#		dLIF = d25 - ( 1.5 * dIQR )
+		d25, d50, d75 = (adAbs[int(round( 0.25 * i ))] for i in (1, 2, 3))
+		dIQR = d75 - d25
+		dAve = dStd = 0
+		for d in adAbs:
+			dAve += d
+			dStd += d * d
+		dAve /= len( adAbs )
+		dStd = ( ( dStd / ( len( adAbs ) - 1 ) ) - ( dAve * dAve ) )**0.5
+		if fMedian:
+			dLF = d50 - ( dIQRs * dIQR )
+			dFill = d50
+		else:
+			dLF = dAve - ( dIQRs * dStd )
+			dFill = dAve
+
 		for strKO, dAb in hashKOs.items( ):
-			if dAb < d50:
-				hashKOs[strKO] = d50
+			if dAb < dLF:
+				hashKOs[strKO] = dFill
 	for strKO, dAb in hashKOs.items( ):
 		print( "\t".join( (strKO, strKEGG, str(dAb)) ) )

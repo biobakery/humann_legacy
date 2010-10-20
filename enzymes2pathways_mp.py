@@ -9,10 +9,12 @@ c_strDirMinPath	= "./MinPath/"
 c_strMinPath	= "MinPath1.1hmp.py"
 
 hashAbs = {}
-i = 0
+astrComments = []
 iIn, strIn = tempfile.mkstemp( )
 for strLine in sys.stdin:
-	i += 1
+	if strLine and ( strLine[0] == "#" ):
+		astrComments.append( strLine )
+		continue
 	strID, strAb = strLine.strip( ).split( "\t" )
 	if strID == "GID":
 		continue
@@ -39,6 +41,7 @@ for strLine in open( strOut ):
 os.unlink( strOut )
 
 print( "GID	Pathway	Abundance" )
+sys.stdout.write( "".join( astrComments ) )
 for strID, dAb in hashAbs.items( ):
 	astrPaths = hashPaths.get( strID ) or [""]
 	strAb = str(dAb) # / len( astrPaths ))

@@ -84,6 +84,7 @@ for strLine in sys.stdin:
 	pTos.append( iTo )
 	pScores.append( math.exp( -dScore ) )
 hashhashOrgs = {}
+hashOrgs = {}
 for iFrom in range( len( astrFroms ) ):
 	aiScores = apScores[iFrom]
 	if iTopN > 0:
@@ -97,10 +98,12 @@ for iFrom in range( len( astrFroms ) ):
 		iCur, dCur = (pArray[iScore] for pArray in (pTos, pScores))
 		strTo = astrTos[iCur]
 		dCur /= hashGeneLs.get( strTo, 1 )
+		d = dCur / dSum
 		strOrg, strGene = strTo.split( ":" )
+		hashOrgs[strOrg] = d + hashOrgs.get( strOrg, 0 )
 		strGene = strGene.upper( )
 		hashGenes = hashhashOrgs.setdefault( strOrg, {} )
-		hashGenes[strGene] = ( dCur / dSum ) + hashGenes.get( strGene, 0 )
+		hashGenes[strGene] = d + hashGenes.get( strGene, 0 )
 
 astrOrgs = hashhashOrgs.keys( )
 hashScores = {}
@@ -117,5 +120,7 @@ for strKO, hashKO in hashKOC.items( ):
 		dSum += dScore
 
 print( "GID	Abundance" )
+for strOrg, dScore in hashOrgs.items( ):
+	print( "\t".join( ("#", strOrg, "%g" % dScore) ) )
 for strKO, dScore in hashScores.items( ):
-	print( "\t".join( (strKO, str(dScore)) ) ) # / dSum)) ) )
+	print( "\t".join( (strKO, "%g" % dScore) ) ) # / dSum)) ) )

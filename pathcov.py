@@ -2,9 +2,12 @@
 
 import sys
 
-if len( sys.argv ) != 2:
-	raise Exception( "Usage: pathcov.py <keggc> < <pathways.txt>" )
+c_fMedian	= True
+
+if len( sys.argv ) < 2:
+	raise Exception( "Usage: pathcov.py <keggc> [median=" + str(c_fMedian) + "] < <pathways.txt>" )
 strKEGGC = sys.argv[1]
+fMedian = c_fMedian if ( len( sys.argv ) <= 2 ) else ( int(sys.argv[2]) != 0 )
 
 hashKEGGs = {}
 for strLine in open( strKEGGC ):
@@ -24,12 +27,14 @@ for strLine in sys.stdin:
 	dAve += dAb
 	iAve += 1
 	hashScores.setdefault( astrLine[1], {} )[astrLine[0]] = dAb
-dAve /= iAve
+if iAve:
+	dAve /= iAve
 adScores.sort( )
-dMed = adScores[len( adScores ) / 2]
+if adScores:
+	dMed = adScores[len( adScores ) / 2] if fMedian else ( sum( adScores ) / len( adScores ) )
 print( "PID	Coverage" )
 for strKEGG, hashKOs in hashScores.items( ):
-	if len( strKEGG ) == 0:
+	if not ( strKEGG and hashKOs ):
 		continue
 	iHits = 0
 	for strKO, dAb in hashKOs.items( ):

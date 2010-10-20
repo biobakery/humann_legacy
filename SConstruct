@@ -7,6 +7,9 @@ import sys
 
 def isexclude( strInput ):
 
+	if re.search( 'mock[^_]', strInput ):
+		return True
+
 	return (
 		False
 #		( strInput.find( "338793263-700106436" ) < 0 ) and ( strInput.find( "mock" ) < 0 ) and
@@ -90,6 +93,7 @@ c_strFileECC				= "ecc"
 c_strFileKEGGC				= "keggc"
 c_strFileGeneLs				= "genels"
 c_strFilePathwayC			= "pathwayc"
+c_strFileTaxPC				= "taxpc"
 logging.basicConfig( filename = "provenance.txt", level = logging.INFO,
 	format = '%(asctime)s %(levelname)-8s %(message)s' )
 c_logrFileProvenanceTxt		= logging.getLogger( )
@@ -105,6 +109,7 @@ c_strProgName				= "./postprocess_names.py"
 c_strProgNormalize			= "./normalize.py"
 c_strProgZero				= "./zero.py"
 c_strProgOutput				= "./output.py"
+c_strProgPaths2TaxPC		= "./paths2taxpc.py"
 c_strSuffixOutput			= ".txt"
 c_strMock					= "mock"
 c_apProcessors				= [
@@ -112,7 +117,9 @@ c_apProcessors				= [
 # mapx 100 samples
 #===============================================================================
 	CProcessor( ".txt.bz2",			"01",	"keg",	"./blast2enzymes.py",
-		[c_strFileKOC, c_strFileGeneLs],	[],		True ),
+		[c_strFileKOC, c_strFileGeneLs],	[],			True ),
+	CProcessor( ".txt.bz2",			"11",	"mtc",	"./blast2metacyc.py",
+		[c_strFileMCC],						[],			True ),
 #===============================================================================
 # mapx synthetic community
 #===============================================================================
@@ -126,8 +133,8 @@ c_apProcessors				= [
 		[c_strFileKOC, c_strFileGeneLs],	["1"],		True ),
 	CProcessor( ".txt.gz",			"01",	"knb",	"./blast2enzymes.py",
 		[c_strFileKOC, c_strFileGeneLs],	["0.98"],	True ),
-	CProcessor( ".txt.gz",			"11",	"mtc",	"./blast2metacyc.py",
-		[c_strFileMCC],						[],			True ),
+#	CProcessor( ".txt.gz",			"11",	"mtc",	"./blast2metacyc.py",
+#		[c_strFileMCC],						[],			True ),
 #===============================================================================
 # mblastx synthetic community
 #===============================================================================
@@ -141,42 +148,62 @@ c_apProcessors				= [
 		[c_strFileKOC, c_strFileGeneLs],	["0.98", "1"],			True ),
 	CProcessor( "_mblastxv2.0.8.gz",	"01",	"knc",	"./blast2enzymes.py",
 		[c_strFileKOC, c_strFileGeneLs],	["0.9", "1"],			True ),
-	CProcessor( "_mblastxv2.0.8.gz",	"11",	"mtc",	"./blast2metacyc.py",
-		[c_strFileMCC],						["0", "1"],				True ),
+#	CProcessor( "_mblastxv2.0.8.gz",	"11",	"mtc",	"./blast2metacyc.py",
+#		[c_strFileMCC],						["0", "1"],				True ),
 #===============================================================================
 # mapx 5 samples
 #===============================================================================
 	CProcessor( ".alignments.gz",	"01",	"keg",	"./blast2enzymes.py",
 		[c_strFileKOC, c_strFileGeneLs],	[],			True ),
 	CProcessor( ".alignments.gz",	"11",	"mtc",	"./blast2metacyc.py",
-		[c_strFileMCC],		[],		True ),
+		[c_strFileMCC],						[],			True ),
 #===============================================================================
 # annotations mock communities
 #===============================================================================
 	CProcessor( ".tab",				"01",	"keg",	"./tab2enzymes.py",
-		[c_strInputMockrefs],	[],	True ),
+		[c_strInputMockrefs],				[],			True ),
 	CProcessor( ".jgi",				"01",	"keg",	"./jgi2enzymes.py",
-		[c_strFileCOGC],	[],		True ),
+		[c_strFileCOGC],					[],			True ),
 	CProcessor( ".jcvi",			"01",	"keg",	"./jcvi2enzymes.py",
-		[c_strFileECC],		[],		True ),
+		[c_strFileECC],						[],			True ),
 #===============================================================================
 # enzymes -> pathways
 #===============================================================================
 # MinPath doesn't currently run on MetaCyc, so we include the naive version
-	CProcessor( "11",	"02",	"nve",	"./enzymes2pathways.py",
+	CProcessor( "11",	"02a",	"nve",	"./enzymes2pathways.py",
 		[c_strFilePathwayC] ),
-	CProcessor( "01",	"02",	"mpt",	"./enzymes2pathways_mp.py",
+	CProcessor( "01",	"02a",	"mpt",	"./enzymes2pathways_mp.py",
 		[] ),
+#===============================================================================
+# taxonomic provenance
+#===============================================================================
+# Cutting off at median empirically outperforms one IQR below/above
+# One IQR above =~ 0 (median), one IQR below =~ nul (none)
+# Median sometimes fails catastrophically, worse on abundance
+#	CProcessor( "02a",	"02b",	"nnd",	"./taxlim.py",
+#		[c_strFileTaxPC],					["1", "1"] ),
+#	CProcessor( "02a",	"02b",	"nne",	"./taxlim.py",
+#		[c_strFileTaxPC],					["0", "1"] ),
+# One STD above =~ 0 (mean), STD below =~ nul (none)
+#	CProcessor( "02a",	"02b",	"nvd",	"./taxlim.py",
+#		[c_strFileTaxPC],					["1"] ),
+# Even naive taxonomic limitation substantially outperforms none
+#	CProcessor( "02a",	"02b",	"nul",	"./cat.py",
+#		[],									[] ),
+# Mean is most consistently best for abundance + coverage
+# Particularly in most limited data (mblastx with <=90% ID)
+	CProcessor( "02a",	"02b",	"nve",	"./taxlim.py",
+		[c_strFileTaxPC],					[] ),
 #===============================================================================
 # smoothing
 #===============================================================================
 # Witten-Bell doesn't actually help more than naive smoothing
-#	CProcessor( "02",	"03a",	"nve",	"./smooth.py",
+#	CProcessor( "02b",	"03a",	"nve",	"./smooth.py",
 #		[c_strFilePathwayC] ),
 # No smoothing at all is terrible
-#	CProcessor( "02",	"03a",	"nul",	"./cat.py",
-#		[c_strFilePathwayC] ),
-	CProcessor( "02",	"03a",	"wbl",	"./smooth_wb.py",
+#	CProcessor( "02b",	"03a",	"nul",	"./cat.py",
+#		[] ),
+	CProcessor( "02b",	"03a",	"wbl",	"./smooth_wb.py",
 		[c_strFilePathwayC] ),
 #===============================================================================
 # gap filling
@@ -184,6 +211,10 @@ c_apProcessors				= [
 # No gap filling is much worse than naive gap filling
 #	CProcessor( "03a",	"03b",	"nul",	"./cat.py",
 #		[] ),
+# Average is better than median for abundance, worse for coverage
+# IQRs/STDs don't really matter
+#	CProcessor( "03a",	"03b",	"nae",	"./gapfill.py",
+#		[c_strFilePathwayC],			["0", "0"] ),
 	CProcessor( "03a",	"03b",	"nve",	"./gapfill.py",
 		[c_strFilePathwayC] ),
 #===============================================================================
@@ -198,8 +229,11 @@ c_apProcessors				= [
 # COVERAGE
 #===============================================================================
 # Xipe at this stage doesn't affect performance
-#	CProcessor( "03d",	"04a",	"nul",	"./cat.py",
+#	CProcessor( "03c",	"04a",	"nul",	"./cat.py",
 #		[] ),
+# Mean vs. median doesn't matter but must match above
+#	CProcessor( "03c",	"03d",	"nae",	"./pathcov.py",
+#		[c_strFilePathwayC],				["0"] ),
 	CProcessor( "03c",	"03d",	"nve",	"./pathcov.py",
 		[c_strFilePathwayC] ),
 	CProcessor( "03d",	"04a",	"xpe",	"./pathcov_xp.py",
@@ -207,6 +241,10 @@ c_apProcessors				= [
 #===============================================================================
 # ABUNDANCE
 #===============================================================================
+# Median is horrid compared to average
+# But average of the upper half is better!
+#	CProcessor( "03c",	"04b",	"nvm",	"./pathab.py",
+#		[c_strFilePathwayC],				["0"] ),
 	CProcessor( "03c",	"04b",	"nve",	"./pathab.py",
 		[c_strFilePathwayC] ),
 ]
@@ -276,6 +314,17 @@ for astrKO in ([c_strFileKOC, c_strProgKO2KOC], [c_strFileKEGGC, c_strProgKO2KEG
 	pE.NoClean( astrKO[0] )
 pE.Command( c_strFileGeneLs, [c_strFileGenesPEP, c_strProgGenes2GeneLs], rn )
 pE.NoClean( c_strFileGeneLs )
+
+def funcTaxPC( target, source, env ):
+	
+	strT, astrSs = ts( target, source )
+	strPattern = "*_pathway.list"
+	iRet = 0 and ex( "cd " + c_strDirOutput + " && " +
+		"lftp -c mget ftp://ftp.genome.jp/pub/kegg/genes/organisms/*/" + strPattern )
+	return ( iRet or ex( out( " ".join( (astrSs[0], c_strDirOutput + "/" + strPattern) ),
+		strT ) ) )
+pE.Command( c_strFileTaxPC, [c_strProgPaths2TaxPC], funcTaxPC )
+pE.NoClean( c_strFileTaxPC )
 
 #===============================================================================
 # MetaCyc
