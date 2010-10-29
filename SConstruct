@@ -7,8 +7,10 @@ import sys
 
 def isexclude( strInput ):
 
-	if re.search( 'mock[^_]', strInput ):
-		return True
+#	if re.search( 'mock[^_]', strInput ):
+#		return True
+#	if re.search( 'HMPZ', strInput ):
+#		return True
 
 	return (
 		False
@@ -133,8 +135,10 @@ c_apProcessors				= [
 		[c_strFileKOC, c_strFileGeneLs],	["1"],		True ),
 	CProcessor( ".txt.gz",			"01",	"knb",	"./blast2enzymes.py",
 		[c_strFileKOC, c_strFileGeneLs],	["0.98"],	True ),
-#	CProcessor( ".txt.gz",			"11",	"mtc",	"./blast2metacyc.py",
-#		[c_strFileMCC],						[],			True ),
+	CProcessor( ".txt.gz",			"01",	"knc",	"./blast2enzymes.py",
+		[c_strFileKOC, c_strFileGeneLs],	["0.9"],	True ),
+	CProcessor( ".txt.gz",			"11",	"mtc",	"./blast2metacyc.py",
+		[c_strFileMCC],						[],			True ),
 #===============================================================================
 # mblastx synthetic community
 #===============================================================================
@@ -144,12 +148,14 @@ c_apProcessors				= [
 # Keeping just the top 20 hits doesn't generally hurt performance
 #	CProcessor( "_mblastxv2.0.8.gz",	"01",	"ktt",	"./blast2enzymes.py",
 #		[c_strFileKOC, c_strFileGeneLs],	["0.98", "1", "20"],	True ),
+	CProcessor( "_mblastxv2.0.8.gz",	"01",	"kna",	"./blast2enzymes.py",
+		[c_strFileKOC, c_strFileGeneLs],	["1", "1"],				True ),
 	CProcessor( "_mblastxv2.0.8.gz",	"01",	"knb",	"./blast2enzymes.py",
 		[c_strFileKOC, c_strFileGeneLs],	["0.98", "1"],			True ),
 	CProcessor( "_mblastxv2.0.8.gz",	"01",	"knc",	"./blast2enzymes.py",
 		[c_strFileKOC, c_strFileGeneLs],	["0.9", "1"],			True ),
-#	CProcessor( "_mblastxv2.0.8.gz",	"11",	"mtc",	"./blast2metacyc.py",
-#		[c_strFileMCC],						["0", "1"],				True ),
+	CProcessor( "_mblastxv2.0.8.gz",	"11",	"mtc",	"./blast2metacyc.py",
+		[c_strFileMCC],						["0", "1"],				True ),
 #===============================================================================
 # mapx 5 samples
 #===============================================================================
@@ -169,11 +175,15 @@ c_apProcessors				= [
 #===============================================================================
 # enzymes -> pathways
 #===============================================================================
-# MinPath doesn't currently run on MetaCyc, so we include the naive version
-	CProcessor( "11",	"02a",	"nve",	"./enzymes2pathways.py",
-		[c_strFilePathwayC] ),
+# MinPath helps so much that we don't need to include naive pathway assignment
+#	CProcessor( "01",	"02a",	"nve",	"./enzymes2pathways.py",
+#		[c_strFilePathwayC] ),
+#	CProcessor( "11",	"02a",	"nve",	"./enzymes2pathways.py",
+#		[c_strFilePathwayC] ),
 	CProcessor( "01",	"02a",	"mpt",	"./enzymes2pathways_mp.py",
-		[] ),
+		[c_strFileKEGGC] ),
+	CProcessor( "11",	"02a",	"mpt",	"./enzymes2pathways_mp.py",
+		[c_strFileMCPC] ),
 #===============================================================================
 # taxonomic provenance
 #===============================================================================

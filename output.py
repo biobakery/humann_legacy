@@ -9,7 +9,8 @@ strOut = sys.argv[1]
 strLine = sys.stdin.readline( )
 if not strLine:
 	sys.exit( 1 )
-with open( strOut, "w" ) as fileOut:
+fileOut = open( strOut, "w" )
+fileOut.write( strLine )
+for strLine in sys.stdin:
 	fileOut.write( strLine )
-	for strLine in sys.stdin:
-		fileOut.write( strLine )
+fileOut.close( )

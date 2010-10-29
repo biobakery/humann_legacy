@@ -20,5 +20,6 @@ for strLine in sys.stdin:
 		fFirst = False
 		astrLine[1] = "NAME"
 	else:
-		astrLine[1] = hashNames.get( astrLine[0], astrLine[0] )
+		strGloss = hashNames.get( astrLine[0] )
+		astrLine[1] = astrLine[0] + ( ( ": " + strGloss ) if strGloss else "" )
 	print( "\t".join( astrLine ) )

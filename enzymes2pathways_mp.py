@@ -6,7 +6,11 @@ import sys
 import tempfile
 
 c_strDirMinPath	= "./MinPath/"
-c_strMinPath	= "MinPath1.1hmp.py"
+c_strMinPath	= "MinPath1.2hmp.py"
+
+if len( sys.argv ) != 2:
+	raise Exception( "Usage: enzymes2pathways_mp.py <mapfile> < <enzymes.txt>" )
+strMap = sys.argv[1]
 
 hashAbs = {}
 astrComments = []
@@ -25,8 +29,8 @@ os.close( iIn )
 iOut, strOut = tempfile.mkstemp( )
 iTmp, strTmp = tempfile.mkstemp( )
 os.close( iOut )
-subprocess.call( [c_strDirMinPath + c_strMinPath, "-ko", strIn, "-report",
-	"/dev/null", "-details", strOut, "-mps", strTmp],
+subprocess.call( [c_strDirMinPath + c_strMinPath, "-any", strIn, "-map", strMap,
+	"-report", "/dev/null", "-details", strOut, "-mps", strTmp],
 	env = {"MinPath": c_strDirMinPath}, stdout = sys.stderr )
 os.unlink( strIn )
 
@@ -35,7 +39,7 @@ hashPaths = {}
 for strLine in open( strOut ):
 	astrLine = strLine.strip( ).split( " " )
 	if strLine[0:4] == "path":
-		strPath = astrLine[1]
+		strPath = astrLine[7]
 	else:
 		hashPaths.setdefault( astrLine[0], [] ).append( strPath )
 os.unlink( strOut )
@@ -46,6 +50,4 @@ for strID, dAb in hashAbs.items( ):
 	astrPaths = hashPaths.get( strID ) or [""]
 	strAb = str(dAb) # / len( astrPaths ))
 	for strPath in ( astrPaths or [""] ):
-		if len( strPath ) > 0:
-			strPath = "ko" + strPath
 		print( "\t".join( [strID, strPath, strAb] ) )

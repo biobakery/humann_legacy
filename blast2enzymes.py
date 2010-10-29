@@ -5,6 +5,7 @@ import math
 import sys
 
 c_iLength	= 10
+c_strID		= "%identical"
 
 def enhash( strID, hashIDs, astrIDs, apScores = None ):
 	
@@ -27,14 +28,18 @@ iTopN = -1 if ( len( sys.argv ) <= 5 ) else int(sys.argv[5])
 
 hashGeneLs = {}
 if strGeneLs:
+	astrGenes = []
+	aiGenes = []
 	dAve = 0
 	for strLine in open( strGeneLs ):
 		strGene, strLength = strLine.strip( ).split( "\t" )
-		hashGeneLs[strGene] = iLength = int(strLength)
+		astrGenes.append( strGene )
+		iLength = int(strLength)
+		aiGenes.append( iLength )
 		dAve += iLength
-	dAve /= float(len( hashGeneLs ))
-	for strGene, iLength in hashGeneLs.items( ):
-		hashGeneLs[strGene] = iLength / dAve
+	dAve /= float(len( astrGenes ))
+	for i in range( len( astrGenes ) ):
+		hashGeneLs[astrGenes[i]] = aiGenes[i] / dAve
 
 hashCOK = {}
 hashKOC = {}
@@ -53,16 +58,26 @@ astrFroms = []
 apScores = []
 pTos = array.array( "L" )
 pScores = array.array( "f" )
+iID = 4 if fMBlastX else None
 for strLine in sys.stdin:
 	strLine = strLine.rstrip( )
-	if ( not strLine ) or ( strLine[0] == "#" ):
+	if not strLine:
 		continue
 	astrLine = strLine.split( "\t" )
 	if not astrLine[0]:
 		continue
+	if strLine[0] == "#":
+		if iID == None:
+			for i in range( len( astrLine ) ):
+				if astrLine[i] == c_strID:
+					iID = i
+					break
+		continue
+	if iID == None:
+		continue
 	try:
-		strTo, strFrom, strID, strScore = (astrLine[1], astrLine[0], astrLine[4], astrLine[2]) \
-			if fMBlastX else (astrLine[0], astrLine[2], astrLine[7], astrLine[-1])
+		strTo, strFrom, strID, strScore = (astrLine[1], astrLine[0], astrLine[iID], astrLine[2]) \
+			if fMBlastX else (astrLine[0], astrLine[2], astrLine[iID], astrLine[-1])
 	except IndexError:
 		sys.stderr.write( "%s\n" % astrLine )
 		continue

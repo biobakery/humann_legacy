@@ -3,9 +3,11 @@
 # developed by Yuzhen Ye (yye@indiana.edu)
 # Indiana University, Bloomington
 
-# last update: July 31, 2010 by Yuzhen Ye
+# what's new in version 1.2 (released on Oct 19, 2010)
+#  MinPath1.2 works on any pathway system
+#  what you need: a pathway-function mapping file (e.g, data/ec2path), and your input file
 
-# what's new in version 1.1:
+# what's new in version 1.1 (released on July 31, 2010) 
 #  * numpy independent
 #  * add detailed output of ko assignments to each pathway
 
@@ -23,7 +25,7 @@ if minpath or os.path.exists(path0):
 else:
         sys.exit("Environment variable MinPath not set")
 
-keggPath0, seedPath0, glpsol0 = minpath + "/data", minpath + "/data", minpath + "/glpk-4.6/examples/glpsol"
+keggPath0, seedPath0, mapPath0, glpsol0 = minpath + "/data", minpath + "/data", minpath + "/data", minpath + "/glpk-4.6/examples/glpsol"
 
 def intmatrix(dim1, dim2):
 	mat = []
@@ -35,15 +37,19 @@ def intmatrix(dim1, dim2):
 	
 class MinPath:
 
-	def __init__(self, whichdb = "KEGG", pathdir="", getgene = False, givenspe = ""):
+	def __init__(self, whichdb = "KEGG", pathdir="", getgene = False, givenspe = "", mapfile = ""):
 		self.whichDB = whichdb
+		self.speID = givenspe
 		global keggPath0
 		global seedPath0
+		global mapPath0
 		if pathdir == "":
 			if whichdb == "KEGG": 
 				self.dataDir = keggPath0
-			else: 
+			elif whichdb == "SEED":
 				self.dataDir = seedPath0
+			else:
+				self.dataDir = mapPath0
 		else:
 			self.dataDir = pathdir 
 		self.famTot = 0
@@ -62,19 +68,26 @@ class MinPath:
 		self.orgGeneList = []
 		self.famMapped = []
 		self.pathMapped = []
-		self.speID = givenspe
-		self.whichDB = whichdb
 	
 		if whichdb == "SEED":
 			print "now get SEED"
 			fig2ssfile = self.dataDir + "/figfam_subsystem.dat"
 			self.ReadFigSubsytem(fig2ssfile)
-		else:
+		elif whichdb == "KEGG":
 			pathfile = self.dataDir + "/map_title.tab"	
 			self.ReadKEGGPath(pathfile)
 
 			kofile = self.dataDir + "/ko" 
 			self.ReadKO(kofile, getgene, givenspe) #KO: KEGG family
+		else:
+			if os.path.exists(mapfile):
+				print "mapfile", mapfile
+				self.ReadAnyMap(mapfile)
+			elif os.path.exists(self.dataDir + "/" + os.path.basename(mapfile)):
+				print "file: ", self.dataDir + "/" + os.path.basename(mapfile)
+				self.ReadAnyMap(self.dataDir + "/" + os.path.basename(mapfile))
+			else:
+				sys.exit("file " + mapfile + " not found")
 
 		self.CheckUniqueFam()
 
@@ -83,6 +96,45 @@ class MinPath:
 
         def GetPathName(self):
 		return self.pathName;
+
+	def ReadAnyMap(self, mapfile):
+		try:
+			file = open(mapfile, "r")
+		except IOError:
+			print "open file %s error" % mapfile
+
+		for aline in file:
+			if aline[0] == '#':
+				continue
+			subs = aline.strip().split()
+			if len(subs) < 2:
+				continue
+			path, fam = subs[0], subs[1]
+			if path in self.pathName:
+				pathidx = self.pathName.index(path)
+			else:
+				pathidx = len(self.pathList)
+				self.pathList.append(str(pathidx + 1))
+				self.pathName.append(path)
+				self.path2Fam.append([])
+			if fam in self.famID:
+				famidx = self.famID.index(fam)
+			else:
+				famidx = len(self.famList)
+				self.famList.append(str(famidx + 1))
+				self.famName.append(fam)
+				self.famID.append(fam)
+				self.fam2Path.append([])
+			if famidx not in self.path2Fam[pathidx]:
+				self.path2Fam[pathidx].append(famidx)
+				self.fam2Path[famidx].append(pathidx)
+				#same path & fun could be listed multiple times
+
+		self.famTot = len(self.famList)
+		self.pathTot = len(self.pathList)		
+		print "total family", self.famTot, " pathway", self.pathTot
+		#for idx in range(self.pathTot):
+		#	print "path", self.pathName[idx], " include fam", len(self.path2Fam[idx])
 
 	#read SEED figfam to subsytem mapping
 	def ReadFigSubsytem(self, fig2ssfile):
@@ -720,7 +772,10 @@ class MinPath:
 			maps = [keggmap, self.pathMapped, minpath]
 		else:
 			seedmap = []	
-			tags = ["seed", "naive", "minpath"]
+			if self.whichDB == 'SEED':
+				tags = ["seed", "naive", "minpath"]
+			else:
+				tags = ["any", "naive", "minpath"]
 			maps = [seedmap, self.pathMapped, minpath]
 		mapnum = len(maps)
 		pathvalid = intmatrix(self.pathTot, mapnum)
@@ -767,7 +822,7 @@ class MinPath:
 
 # this function reads in KO/fig assignment, then map KO/fig families to the pathways
 # last update by Yuzhen Ye on July 3, 2009
-def Orth2Path(infile = "demo.ko", whichdb = "KEGG", mpsfile = "test.mps", reportfile = "test.minpath", detailfile = ""):
+def Orth2Path(infile = "demo.ko", whichdb = "KEGG", mpsfile = "test.mps", reportfile = "test.minpath", detailfile = "", mapfile=""):
 	try:
 		file = open(infile, "r")
 	except IOError:
@@ -776,26 +831,28 @@ def Orth2Path(infile = "demo.ko", whichdb = "KEGG", mpsfile = "test.mps", report
 	orthlist, orthcount = [], []
 	add = 0
 	for aline in file:
-		aline = aline.strip()
-		tmp = aline.split("\t")
+		#aline = aline.strip()
+		#tmp = aline.split("\t")
+		tmp = aline.strip().split()
 		if len(tmp) >= 2:
-			ab = float(tmp[1])
-			add = add + ab
-			if tmp[0] not in orthlist:
-				orthlist.append(tmp[0])
-				orthcount.append(ab)
+			add = add + 1
+			if tmp[1] not in orthlist:
+				orthlist.append(tmp[1])
+				orthcount.append(1)
 				#print "ko-%d=%s" % (len(orthlist), tmp[1])
 			else:
-				idx = orthlist.index(tmp[0])
-				orthcount[idx] += ab
+				idx = orthlist.index(tmp[1])
+				orthcount[idx] += 1
 	file.close()
 
 	print "total input orth=%d  unique=%d" % (add, len(orthlist))
 
-	test = MinPath(whichdb = whichdb) #default pathwaydb: KEGG
+	test = MinPath(whichdb = whichdb, mapfile = mapfile) #default pathwaydb: KEGG
 
 	if whichdb == "KEGG":
 		map = test.Orth2PathMin(famidxlist=orthlist, famnamelist=[], famcount=orthcount, mpsfile=mpsfile)
+	elif whichdb == "SEED":
+		map = test.Orth2PathMin(famidxlist=[], famnamelist=orthlist, famcount=orthcount, mpsfile=mpsfile)
 	else:
 		map = test.Orth2PathMin(famidxlist=[], famnamelist=orthlist, famcount=orthcount, mpsfile=mpsfile)
 	#KEGG by ids, and fig by names
@@ -806,15 +863,19 @@ def Orth2Path(infile = "demo.ko", whichdb = "KEGG", mpsfile = "test.mps", report
 
 	test.WriteReport(map_add, reportfile, detailfile)
 
-	os.system("rm " + mpsfile + "*")
+	os.system("rm test.mps*")
 
 if __name__ == '__main__':
-	kofile, figfile, mpsfile, reportfile, detailfile = "", "", "test.mps", "test.minpath", ""
+	kofile, figfile, anyfile, mapfile, mpsfile, reportfile, detailfile = "", "", "", "", "test.mps", "test.minpath", ""
 	for i in range(len(sys.argv)):
 		if sys.argv[i] == "-ko":
 			kofile = sys.argv[i + 1]
 		elif sys.argv[i] == "-fig":
 			figfile = sys.argv[i + 1]
+		elif sys.argv[i] == "-any":
+			anyfile = sys.argv[i + 1]
+		elif sys.argv[i] == "-map":
+			mapfile = sys.argv[i + 1]
 		elif sys.argv[i] == "-report":
 			reportfile = sys.argv[i + 1]
 		elif sys.argv[i] == "-details":
@@ -825,11 +886,18 @@ if __name__ == '__main__':
 		Orth2Path(infile = kofile, mpsfile = mpsfile, reportfile = reportfile, detailfile = detailfile)
 	elif figfile:
 		Orth2Path(infile = figfile, mpsfile = mpsfile, reportfile = reportfile, detailfile = detailfile, whichdb = "SEED")
+	elif anyfile and mapfile:
+		Orth2Path(infile = anyfile, mpsfile = mpsfile, reportfile = reportfile, detailfile = detailfile, whichdb = "ANY", mapfile=mapfile)
 	else:
-		print "Usage: python MinPath.py <-ko filename>/<-fig filename> [-report filename] [-details detailed-output]"
+		print "Usage: python MinPath.py <-ko filename>/<-fig filename>/<-any annfile> [-map mapfile] [-report filename] [-details detailed-output]"
+		print "Note: your input file can contain functional annotations in either of the following"
+		print "   -ko file: annotation in KEGG KO families"
+		print "   -fig file: annotation in SEED fig families"
+		print "   -any file: annotation in any families, then you must specify -map, the pathway-function mapping file"
 		print "Example 1: python MinPath.py -ko demo.ko -report demo.ko.minpath"
 		print "Example 2: python MinPath.py -ko demo.ko -report demo.ko.minpath -details demo.ko.minpath.details"
 		print "Example 3: python MinPath.py -fig demo.fig -report demo.fig.minpath"
-		print "Example 3: python MinPath.py -fig demo.fig -report demo.fig.minpath -details demo.fig.minpath.details"
+		print "Example 4: python MinPath.py -fig demo.fig -report demo.fig.minpath -details demo.fig.minpath.details"
+		print "Example 5: python MinPath.py -any demo.ec -map ec2path -report demo.ec.minpath -details demo.ec.minpath.details"
 		sys.exit(1)
 
