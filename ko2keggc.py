@@ -10,7 +10,8 @@ for strLine in sys.stdin:
 	if mtch:
 		strKO = mtch.group( 1 )
 		continue
-	mtch = re.search( '(?:(?:PATH)|(?:BR)):(ko\d+)', strLine )
+#	mtch = re.search( '(?:(?:PATH)|(?:BR)):(ko\d+)', strLine )
+	mtch = re.search( 'PATH:(ko\d+)', strLine )
 	if mtch:
 		hashKEGGs.setdefault( mtch.group( 1 ), set() ).add( strKO )
 

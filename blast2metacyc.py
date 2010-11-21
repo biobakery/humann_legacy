@@ -4,8 +4,6 @@ import array
 import math
 import sys
 
-c_iLength	= 10
-
 def enhash( strID, hashIDs, astrIDs, apScores = None ):
 	
 	iID = hashIDs.get( strID )
@@ -63,7 +61,6 @@ for strLine in sys.stdin:
 		dID = float(strID) / 100
 		if ( dFilter > 0 ) and ( dID >= dFilter ):
 			continue
-	strFrom = strFrom[:c_iLength]
 	iTo = enhash( strTo, hashTos, astrTos )
 	iFrom = enhash( strFrom, hashFroms, astrFroms, apScores )
 	iScore = len( pTos )

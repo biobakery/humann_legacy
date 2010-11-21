@@ -7,8 +7,8 @@ import sys
 
 def isexclude( strInput ):
 
-#	if re.search( 'mock[^_]', strInput ):
-#		return True
+	if re.search( 'mock[^_]', strInput ):
+		return True
 #	if re.search( 'HMPZ', strInput ):
 #		return True
 
@@ -107,6 +107,7 @@ c_strProgGenes2GeneLs		= "./genes2ls.py"
 c_strProgMetaCyc2MCC		= "./metacyc2mcc.py"
 c_strProgMetaCyc2MCPC		= "./metacyc2mcpc.py"
 c_strProgMerge				= "./merge_tables.py"
+c_strProgFilter				= "./filter.py"
 c_strProgName				= "./postprocess_names.py"
 c_strProgNormalize			= "./normalize.py"
 c_strProgZero				= "./zero.py"
@@ -176,10 +177,8 @@ c_apProcessors				= [
 # enzymes -> pathways
 #===============================================================================
 # MinPath helps so much that we don't need to include naive pathway assignment
-#	CProcessor( "01",	"02a",	"nve",	"./enzymes2pathways.py",
-#		[c_strFilePathwayC] ),
-#	CProcessor( "11",	"02a",	"nve",	"./enzymes2pathways.py",
-#		[c_strFilePathwayC] ),
+	CProcessor( "01",	"12a",	"nve",	"./enzymes2pathways.py",
+		[c_strFilePathwayC] ),
 	CProcessor( "01",	"02a",	"mpt",	"./enzymes2pathways_mp.py",
 		[c_strFileKEGGC] ),
 	CProcessor( "11",	"02a",	"mpt",	"./enzymes2pathways_mp.py",
@@ -198,8 +197,8 @@ c_apProcessors				= [
 #	CProcessor( "02a",	"02b",	"nvd",	"./taxlim.py",
 #		[c_strFileTaxPC],					["1"] ),
 # Even naive taxonomic limitation substantially outperforms none
-#	CProcessor( "02a",	"02b",	"nul",	"./cat.py",
-#		[],									[] ),
+	CProcessor( "12a",	"12b",	"nul",	"./cat.py",
+		[],									["1"] ),
 # Mean is most consistently best for abundance + coverage
 # Particularly in most limited data (mblastx with <=90% ID)
 	CProcessor( "02a",	"02b",	"nve",	"./taxlim.py",
@@ -211,16 +210,16 @@ c_apProcessors				= [
 #	CProcessor( "02b",	"03a",	"nve",	"./smooth.py",
 #		[c_strFilePathwayC] ),
 # No smoothing at all is terrible
-#	CProcessor( "02b",	"03a",	"nul",	"./cat.py",
-#		[] ),
+	CProcessor( "12b",	"13a",	"nul",	"./cat.py",
+		[] ),
 	CProcessor( "02b",	"03a",	"wbl",	"./smooth_wb.py",
 		[c_strFilePathwayC] ),
 #===============================================================================
 # gap filling
 #===============================================================================
 # No gap filling is much worse than naive gap filling
-#	CProcessor( "03a",	"03b",	"nul",	"./cat.py",
-#		[] ),
+	CProcessor( "13a",	"13b",	"nul",	"./cat.py",
+		[] ),
 # Average is better than median for abundance, worse for coverage
 # IQRs/STDs don't really matter
 #	CProcessor( "03a",	"03b",	"nae",	"./gapfill.py",
@@ -233,14 +232,14 @@ c_apProcessors				= [
 # Xipe at this stage hurts performance (too many rare enzymes lost)
 #	CProcessor( "03b",	"03c",	"xpe",	"./trim_xp.py",
 #		[] ),
+	CProcessor( "13b",	"13c",	"nul",	"./cat.py",
+		[] ),
 	CProcessor( "03b",	"03c",	"nul",	"./cat.py",
 		[] ),
 #===============================================================================
 # COVERAGE
 #===============================================================================
 # Xipe at this stage doesn't affect performance
-#	CProcessor( "03c",	"04a",	"nul",	"./cat.py",
-#		[] ),
 # Mean vs. median doesn't matter but must match above
 #	CProcessor( "03c",	"03d",	"nae",	"./pathcov.py",
 #		[c_strFilePathwayC],				["0"] ),
@@ -248,6 +247,8 @@ c_apProcessors				= [
 		[c_strFilePathwayC] ),
 	CProcessor( "03d",	"04a",	"xpe",	"./pathcov_xp.py",
 		[] ),
+	CProcessor( "13c",	"04a",	"nve",	"./pathcov.py",
+		[c_strFilePathwayC] ),
 #===============================================================================
 # ABUNDANCE
 #===============================================================================
@@ -257,10 +258,12 @@ c_apProcessors				= [
 #		[c_strFilePathwayC],				["0"] ),
 	CProcessor( "03c",	"04b",	"nve",	"./pathab.py",
 		[c_strFilePathwayC] ),
+	CProcessor( "13c",	"04b",	"nul",	"./pathab.py",
+		[c_strFilePathwayC],	["0"] ),
 ]
 c_aastrFinalizers			= [
-	["04a",	c_strProgZero],
-	["04b",	c_strProgZero],
+	[None,	c_strProgZero],
+	[None,	c_strProgFilter, [c_strFileKEGGC, c_strFilePathwayC]],
 	["04b",	c_strProgNormalize],
 	[None,	"./convenience_bsites.py"],
 ]
@@ -396,23 +399,25 @@ for strTo in astrTo:
 hashTypes = {}
 for strType, astrType in hashTo.items( ):
 	strFile = c_strDirOutput + "/" + strType + c_strSuffixOutput
-	astrFinalizers = []
+	aastrFinalizers = []
+	setFinalizers = set()
 	for astrFinalizer in c_aastrFinalizers:
 		if ( not astrFinalizer[0] ) or ( strFile.find( astrFinalizer[0] ) >= 0 ):
-			astrFinalizers.append( astrFinalizer[1] )
+			aastrFinalizers.append( astrFinalizer[1:] )
+			if len( astrFinalizer ) > 2:
+				setFinalizers |= set(astrFinalizer[2])
 
-	def funcFile( target, source, env, astrFinalizers = astrFinalizers ):
+	def funcFile( target, source, env, astrFiles = astrType, aastrFinalizers = aastrFinalizers ):
 
 		strT, astrSs = ts( target, source )
-		astrFiles = astrSs[( 3 + len( astrFinalizers ) ):]
-		strFinalizers = " | ".join( astrFinalizers )
-		if len( astrFinalizers ) > 0:
+		strFinalizers = " | ".join( map( lambda a: " ".join( [a[0]] + ( a[1] if ( len( a ) > 1 ) else [] ) ), aastrFinalizers ) )
+		if len( strFinalizers ) > 0:
 			strFinalizers += " | "
 		return ex( out( " ".join( [astrSs[0]] + astrFiles + ["|", strFinalizers,
 			astrSs[1], astrSs[2]] ), strT ) )
 
 	pFile = pE.Command( strFile, [c_strProgMerge, c_strProgName, c_strInputMapKEGG] +
-		astrFinalizers + astrType, funcFile )
+		map( lambda a: a[0], aastrFinalizers ) + astrType + list(setFinalizers), funcFile )
 	Default( pFile )
 	
 	pMatch = re.search( '(\d{2}[^-]*)', strFile )
