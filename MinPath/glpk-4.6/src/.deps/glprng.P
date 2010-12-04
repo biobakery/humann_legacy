@@ -1,4 +1,0 @@
-glprng.o: glprng.c ../include/glplib.h ../include/glprng.h
-glprng.c :
-../include/glplib.h :
-../include/glprng.h :

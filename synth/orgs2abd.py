@@ -22,7 +22,7 @@ for strLine in sys.stdin:
 
 hashPathways = {}
 for strPathways in astrPathways:
-	pMatch = re.search( '^(?:.*\/)?([a-z]{3}?)_pathway\.list$', strPathways )
+	pMatch = re.search( '^(?:.*\/)?([a-z]{3}?)_\S+\.list$', strPathways )
 	if not pMatch:
 		sys.stderr.write( "Illegal genome: %s\n" % strPathways )
 		continue
@@ -31,11 +31,14 @@ for strPathways in astrPathways:
 		sys.stderr.write( "Extra genome: %s\n" % strPathways )
 		continue
 	hashHits[strOrg] = True
-	hashPathways[strOrg] = setPathways = set()
+	setPathways = hashPathways.setdefault( strOrg, set() )
 	for strLine in open( strPathways ):
 		strGene, strToken = strLine.strip( ).split( "\t" )
 		strToken, strID = strToken.split( ":" )
-		setPathways.add( strID[3:] )
+		mtch = re.search( '^[a-z]{3}(\d+)$', strID )
+		if mtch:
+			strID = c_strKO + mtch.group( 1 )
+		setPathways.add( strID )
 
 for strOrg, fOrg in hashHits.items( ):
 	if not fOrg:
@@ -50,5 +53,5 @@ for strOrg, setPathways in hashPathways.items( ):
 
 print( "PID	Abundance" )
 for strPathway, dAbd in hashAbds.items( ):
-	print( "\t".join( (c_strKO + strPathway, ( "%g" % dAbd ) ) ) )
+	print( "\t".join( (strPathway, ( "%g" % dAbd ) ) ) )
 	

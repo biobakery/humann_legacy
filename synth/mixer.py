@@ -59,14 +59,19 @@ for strOrg, dStagger in hashStagger.items( ):
 iRead = 0
 while( iRead < iReads ):
 	dOrg = random.random( )
-	dSum = 0
+	dSum = iOrg = 0
 	for iOrg in range( len( astrOrgs ) ):
 		dSum += adOrgs[iOrg]
 		if dOrg <= dSum:
 			break
-	strOrg = astrOrgs[iOrg]
-	iBegin, iEnd = hashGenomes[strOrg]
-	iCur = random.randrange( iBegin, iEnd )
-	print( ">R%09d %s" % (iRead, astrProvenance[iCur]) )
-	print( astrReads[iCur] )
+	if iOrg < len( astrOrgs ):
+		strOrg = astrOrgs[iOrg]
+		iBegin, iEnd = hashGenomes[strOrg]
+		iCur = random.randrange( iBegin, iEnd )
+		strProv = astrProvenance[iCur]
+		strRead = astrReads[iCur]
+	else:
+		strProv = strRead = ""
+	print( ">R%09d %s" % (iRead, strProv) )
+	print( strRead )
 	iRead += 1

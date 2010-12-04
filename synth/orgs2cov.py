@@ -18,7 +18,7 @@ for strLine in sys.stdin:
 
 setPathways = set()
 for strPathways in astrPathways:
-	pMatch = re.search( '^(?:.*\/)?([a-z]{3}?)_pathway\.list$', strPathways )
+	pMatch = re.search( '^(?:.*\/)?([a-z]{3}?)_\S+\.list$', strPathways )
 	if not pMatch:
 		sys.stderr.write( "Illegal genome: %s\n" % strPathways )
 		continue
@@ -30,7 +30,10 @@ for strPathways in astrPathways:
 	for strLine in open( strPathways ):
 		strGene, strPath = strLine.strip( ).split( "\t" )
 		strPath, strID = strPath.split( ":" )
-		setPathways.add( strID[3:] )
+		mtch = re.search( '^[a-z]{3}(\d+)$', strID )
+		if mtch:
+			strID = c_strKO + mtch.group( 1 )
+		setPathways.add( strID )
 
 for strOrg, fOrg in hashOrgs.items( ):
 	if not fOrg:
@@ -38,5 +41,5 @@ for strOrg, fOrg in hashOrgs.items( ):
 
 print( "PID	Coverage" )
 for strPathway in setPathways:
-	print( "\t".join( (c_strKO + strPathway, "1") ) )
+	print( "\t".join( (strPathway, "1") ) )
 	
