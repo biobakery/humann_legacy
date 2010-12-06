@@ -90,6 +90,7 @@ c_strFileTaxPC				= data( "taxpc" )
 c_strFileMPTARGZ			= data( "minpath1.2.tar.gz" )
 c_strFileModule				= data( "module" )
 c_strFileModuleC			= data( "modulec" )
+c_strFileModuleP			= data( "modulep" )
 c_strDirMP					= data( "MinPath" )
 
 def prog( strFile ):
@@ -122,8 +123,7 @@ c_strProgName				= prog( "postprocess_names.py" )
 c_strProgZero				= prog( "zero.py" )
 c_strProgFilter				= prog( "filter.py" )
 c_strProgNormalize			= prog( "normalize.py" )
-# TODO: metadata this
-c_strProgBSites				= prog( "convenience_bsites.py" )
+c_strProgMetadata			= prog( "metadata.py" )
 #===============================================================================
 # Preprocessing scripts
 #===============================================================================
@@ -147,7 +147,7 @@ c_strProgPerf				= prog( "performance.R" )
 
 c_strMock					= "mock"
 c_strSuffixOutput			= ".txt"
-c_strSuffixPerf				= ".png"
+c_strSuffixPerf				= ".pdf"
 
 def ex( strCmd ):
 
@@ -176,7 +176,7 @@ def out( strCmd, strFile ):
 def main( hashVars ):
 
 	pE = Environment( )
-	pE.Decider( "MD5-timestamp" )
+	pE.Decider( "make" )
 	for strVar, pVar in hashVars.items( ):
 		globals( )[strVar] = pVar
 
@@ -218,7 +218,7 @@ def main( hashVars ):
 		return download( "ftp://ftp.genome.jp/pub/kegg/pathway/map_title.tab", strT )
 	pE.Command( c_strFileMapKEGGTAB, None, funcFileMapTitle )
 	ret( pE, c_strFileMapKEGGTAB )
-	pE.Command( c_strFileMapKEGGTXT, [c_strFileMapKEGGTAB, c_strProgTitles2Txt], rn )
+	pE.Command( c_strFileMapKEGGTXT, [c_strFileMapKEGGTAB, c_strProgTitles2Txt, c_strFileModule], rn )
 	
 	def funcFileModule( target, source, env ):
 		strT, astrSs = ts( target, source )
@@ -226,6 +226,10 @@ def main( hashVars ):
 	pE.Command( c_strFileModule, None, funcFileModule )
 	ret( pE, c_strFileModule )
 	pE.Command( c_strFileModuleC, [c_strFileModule, c_strProgModule2ModuleC], rn )
+	def funcModuleP( target, source, env ):
+		strCmd, strT, astrSs = cts( target, source )
+		return ex( out( " ".join( [strCmd, astrSs[0], "|", astrSs[1], "1"] ), strT ) )
+	pE.Command( c_strFileModuleP, [c_strFileModule, c_strProgModule2ModuleC], funcModuleP )
 	
 	for astrFile in ([c_strFileKO, "ko"], [c_strFileGenesPEP, "fasta/genes.pep"]):
 		def funcFileKEGG( target, source, env, strPath = astrFile[1] ):
@@ -328,12 +332,31 @@ def main( hashVars ):
 	for strTo in astrTo:
 		pMatch = re.search( '_(\d+.*-\S+)' + c_strSuffixOutput + '$', strTo )
 		hashTo.setdefault( pMatch.group( 1 ), [] ).append( strTo )
+
+	hashPerf = {}
+	for fileSynth in \
+		Glob( "/".join( (c_strDirSynth, c_strDirOutput, c_strMock + "_*_0[0-9]*" + c_strSuffixOutput) ) ) + \
+		Glob( "/".join( (c_strDirSynth, c_strDirCyc, "*" + c_strMock + "_*_0[0-9]*" + c_strSuffixOutput) ) ):
+		pMatch = re.search( '(?:([^/]+)_)?(' + c_strMock + '.*)_(\d{2}[^-.]*)', str(fileSynth) )
+		if not pMatch:
+			continue
+		strPaths, strBase, strType = pMatch.groups( )
+		astrFiles = filter( lambda s: s.find( strBase ) >= 0, hashTypes.get( strType, [] ) )
+		if strPaths:
+			astrFiles = filter( lambda s: s.find( strPaths ) >= 0, astrFiles )
+			strBase = "_".join( (strPaths, strBase) )
+		strType, strSubtype = strType[0:2], strType[2:]
+		strType = strBase + "_" + strType
+		strFile = c_strDirOutput + "/" + strType + strSubtype + c_strSuffixOutput
+		hashTo[strType + strSubtype] = [str(fileSynth)] + astrFiles
+		hashPerf.setdefault( strType, set() ).add( strFile )
+
 	for strType, astrType in hashTo.items( ):
 		strFile = c_strDirOutput + "/" + strType + c_strSuffixOutput
 		aastrFinalizers = []
 		setFinalizers = set()
 		for astrFinalizer in c_aastrFinalizers:
-			if ( not astrFinalizer[0] ) or ( strFile.find( astrFinalizer[0] ) >= 0 ):
+			if ( not astrFinalizer[0] ) or re.search( astrFinalizer[0], strFile ):
 				aastrFinalizers.append( astrFinalizer[1:] )
 				if len( astrFinalizer ) > 2:
 					setFinalizers |= set(astrFinalizer[2])
@@ -355,34 +378,6 @@ def main( hashVars ):
 # Synthetic community evaluation
 #===============================================================================
 
-	hashPerf = {}
-	for fileSynth in \
-		Glob( "/".join( (c_strDirSynth, c_strDirOutput, c_strMock + "_*_0[0-9]*" + c_strSuffixOutput) ) ) + \
-		Glob( "/".join( (c_strDirSynth, c_strDirCyc, "*" + c_strMock + "_*_0[0-9]*" + c_strSuffixOutput) ) ):
-		pMatch = re.search( '(?:([^/]+)_)?(' + c_strMock + '.*)_(\d{2}[^-.]*)', str(fileSynth) )
-		if not pMatch:
-			continue
-		strPaths, strBase, strType = pMatch.groups( )
-		astrFiles = filter( lambda s: s.find( strBase ) >= 0, hashTypes.get( strType, [] ) )
-		if strPaths:
-			astrFiles = filter( lambda s: s.find( strPaths ) >= 0, astrFiles )
-		astrProgs = [c_strProgZero]
-		if strType[-1] == "b":
-			astrProgs.append( c_strProgNormalize )
-
-		def funcMock( target, source, env, astrProgs = astrProgs, astrFiles = [str(fileSynth)] + astrFiles ):
-			strT, astrSs = ts( target, source )
-			strProg = astrSs[0]
-			return ex( out( " ".join( [strProg] + astrFiles + ["|",
-				" | ".join( astrProgs )] ), strT ) )
-
-		if strPaths:
-			strBase = "_".join( (strPaths, strBase) )
-		strType, strSubtype = strType[0:2], strType[2:]
-		strType = strBase + "_" + strType
-		strFile = c_strDirOutput + "/" + strType + strSubtype + c_strSuffixOutput
-		pE.Command( strFile, [c_strProgMerge] + astrProgs + [fileSynth] + astrFiles, funcMock )
-		hashPerf.setdefault( strType, set() ).add( strFile )
 	for strType, astrFiles in hashPerf.items( ):
 		def funcPerf( target, source, env ):
 			strT, astrSs = ts( target, source )
@@ -390,5 +385,5 @@ def main( hashVars ):
 			return ex( " ".join( ["R", "--no-save", "--args", strT] + astrArgs + ["<", strR] ) )
 
 		pFile = pE.Command( c_strDirOutput + "/" + strType + c_strSuffixPerf,
-			[c_strProgPerf, c_strFilePathwayC] + sorted( astrFiles ), funcPerf )
+			[c_strProgPerf] + sorted( astrFiles ), funcPerf )
 		Default( pFile )

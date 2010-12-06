@@ -19,17 +19,18 @@ for strLine in sys.stdin:
 hashKOs = {}
 for strLine in open( strKOC ):
 	astrLine = strLine.strip( ).split( "\t" )
+	hashKOs[astrLine[0]] = hashKO = {}
 	strKO = astrLine[0]
 	for strToken in astrLine[1:]:
 		strOrg, strGene = strToken.split( "#" )
 		strOrg = strOrg.lower( )
-		if ( strOrg in hashOrgs ):
-			hashKOs.setdefault( strKO, set() ).add( strOrg )
+		if strOrg in hashOrgs:
+			hashKO[strOrg] = hashKO.get( strOrg, 0 ) + 1
 
 print( "PID	Abundance" )
-for strKO, setOrgs in hashKOs.items( ):
+for strKO, hashKO in hashKOs.items( ):
 	dKO = 0
-	for strOrg in setOrgs:
-		dKO += hashOrgs[strOrg] if fStagger else 1
+	for strOrg, iCopies in hashKO.items( ):
+		dKO += ( hashOrgs[strOrg] if fStagger else 1 ) * iCopies
 	if dKO:
 		print( "\t".join( (strKO, ( "%g" % dKO ) ) ) )

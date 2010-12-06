@@ -61,7 +61,8 @@ for strKO, hashPaths in hashhashKOs.items( ):
 	aaPaths = sorted( hashPaths.items( ), cmp = funcCmp )
 	while len( aaPaths ) > 1:
 		strPath, dPath = aaPaths[-1]
-		if hashTaxlim.get( strPath, 0 ) > dLF:
+		d = hashTaxlim.get( strPath )
+		if ( d == None ) or ( d > dLF ):
 			break
 #		sys.stderr.write( "%s\n" % [strKO, strPath, dPath] )
 		aaPaths.pop( )

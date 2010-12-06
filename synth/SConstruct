@@ -18,6 +18,7 @@ c_strFA				= ".fa"
 c_strQual			= ".qual"
 c_strInputSeqFA		= c_strDirOutput + c_strSeqBase + c_strFA
 c_strInputSeqQUAL	= c_strInputSeqFA + c_strQual
+c_strDirSource		= "../src/"
 c_strDirData		= "../data/"
 c_strInputKOC		= c_strDirData + "koc"
 c_strInputModuleC	= c_strDirData + "modulec"
@@ -85,6 +86,9 @@ pE.Dir( c_strDirOutput )
 def sh( strCmd ):
 
 	sys.stdout.write( "%s\n" % strCmd )
+	hashEnv = os.environ
+	strPP = hashEnv.get( "PYTHONPATH" )
+	hashEnv["PYTHONPATH"] = ( ( strPP + ":" ) if strPP else "" ) + c_strDirSource
 	return subprocess.call( strCmd, stdout = sys.stdout, shell = True )
 
 def ts( astrTargets, astrSources ):

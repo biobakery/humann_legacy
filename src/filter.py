@@ -17,7 +17,7 @@ fFirst = True
 for strLine in sys.stdin:
 	mtch = re.search( '^([^\t]*)\t', strLine )
 	if ( not fFirst ) and mtch:
-		iSize = hashPaths.get( mtch.group( 1 ), 0 )
+		iSize = hashPaths.get( mtch.group( 1 ), c_iSize )
 		if iSize < c_iSize:
 			continue
 	fFirst = False

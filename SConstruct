@@ -15,12 +15,14 @@ def isexclude( strInput ):
 #		False
 #		( strInput.find( "338793263-700106436" ) < 0 ) and ( strInput.find( "mock" ) < 0 ) and
 #		not re.search( '[a-z]-7\d+-7\d+', strInput )
-		strInput.find( "mock_stg_lc" ) < 0
+		( strInput.find( "mock_" ) < 0 ) and ( strInput.find( "SRS" ) < 0 )
 #		( strInput.find( "AnteriorNares" ) < 0 ) and ( strInput.find( "508703490-700038756" ) < 0 )
+#		strInput.find( "SRS" ) < 0
 	)
 
 c_strDirInput				= "input"
 c_strDirOutput				= "output"
+c_strInputMetadata			= c_strDirInput + "/hmp_metadata.txt"
 
 logging.basicConfig( filename = "provenance.txt", level = logging.INFO,
 	format = '%(asctime)s %(levelname)-8s %(message)s' )
@@ -71,6 +73,8 @@ c_apProcessors				= [
 #		[c_strFileKOC, c_strFileGeneLs],	["0.98", "1"],			True ),
 	CProcessor( "_mblastxv2.0.8.gz",	"01",	"knc",	c_strProgBlast2Enzymes,
 		[c_strFileKOC, c_strFileGeneLs],	["0.9", "1"],			True ),
+	CProcessor( "_mblastxv2.0.8.gz",	"01",	"kmc",	c_strProgBlast2Enzymes,
+		[c_strFileKOC, c_strFileGeneLs],	["0.9", "1", "1"],		True ),
 	CProcessor( "_mblastxv2.0.8.gz",	"11",	"mtc",	c_strProgBlast2Metacyc,
 		[c_strFileMCC],						["0", "1"],				True ),
 #===============================================================================
@@ -89,6 +93,18 @@ c_apProcessors				= [
 		[c_strFileCOGC],					[],			True ),
 	CProcessor( ".jcvi",			"01",	"keg",	c_strProgJCVI2Enzymes,
 		[c_strFileECC],						[],			True ),
+#===============================================================================
+# HMP mblastx data
+#===============================================================================
+	CProcessor( ".out.gz",			"01",	"keg",	c_strProgBlast2Enzymes,
+		[c_strFileKOC, c_strFileGeneLs],	["0", "1"],	True ),
+#===============================================================================
+# HMP KO data
+#===============================================================================
+	CProcessor( "__01-keg.txt",		"02a",	"mpt",	c_strProgEnzymes2PathwaysMP,
+		[c_strFileMP, c_strFileKEGGC],		[],			True ),
+	CProcessor( "__01-keg.txt",		"02a",	"mpm",	c_strProgEnzymes2PathwaysMP,
+		[c_strFileMP, c_strFileModuleC],	[],			True ),
 #===============================================================================
 # enzymes -> pathways
 #===============================================================================
@@ -165,8 +181,8 @@ c_apProcessors				= [
 		[c_strFilePathwayC] ),
 	CProcessor( "03d",	"04a",	"xpe",	c_strProgPathCovXP,
 		[c_strProgXipe] ),
-	CProcessor( "03d",	"04a",	"xp2",	c_strProgPathCovXP,
-		[c_strProgXipe] ),
+#	CProcessor( "03d",	"04a",	"xp2",	c_strProgPathCovXP,
+#		[c_strProgXipe] ),
 	CProcessor( "13c",	"04a",	"nve",	c_strProgPathCov,
 		[c_strFilePathwayC] ),
 #===============================================================================
@@ -174,19 +190,18 @@ c_apProcessors				= [
 #===============================================================================
 # Median is horrid compared to average
 # But average of the upper half is better!
-#	CProcessor( "03c",	"04b",	"nvm",	c_strProgPathAb,
-#		[c_strFilePathwayC],				["0"] ),
 	CProcessor( "03c",	"04b",	"nve",	c_strProgPathAb,
 		[c_strFilePathwayC] ),
+#	CProcessor( "03c",	"04b",	"nv2",	c_strProgPathAb,
+#		[c_strFilePathwayC],				["1", "1"] ),
 	CProcessor( "13c",	"04b",	"nul",	c_strProgPathAb,
-		[c_strFilePathwayC],	["0"] ),
+		[c_strFilePathwayC],				["0"] ),
 ]
 c_aastrFinalizers			= [
-	[None,	c_strProgZero],
-	[None,	c_strProgFilter, [c_strFilePathwayC]],
-	["04b",	c_strProgNormalize],
-# TODO: metadata this
-	[None,	c_strProgBSites],
+	[None,			c_strProgZero],
+	[None,			c_strProgFilter, 	[c_strFilePathwayC]],
+	["0(1|(4b))",	c_strProgNormalize],
+	[None,			c_strProgMetadata,	[c_strInputMetadata]],
 ]
 
 main( globals( ) )

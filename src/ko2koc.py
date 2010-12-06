@@ -17,7 +17,7 @@ for strLine in sys.stdin:
 	if mtch:
 		strLine = mtch.group( 1 )
 		fGenes = True
-	mtch = re.search( '^\/\/\/', strLine )
+	mtch = re.search( '^\S', strLine )
 	if ( not fGenes ) or mtch:
 		fGenes = False
 		continue

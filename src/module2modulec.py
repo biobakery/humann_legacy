@@ -3,6 +3,12 @@
 import re
 import sys
 
+fPathways = False
+if len( sys.argv ) > 1:
+	if sys.argv[1] == "-h":
+		raise Exception( "Usage: module2modulec.py [pathways] < <module>" )
+	fPathways = int(sys.argv[1]) != 0
+
 astrEntry = fDefinition = None
 for strLine in sys.stdin:
 	if not fDefinition:
@@ -23,4 +29,6 @@ for strLine in sys.stdin:
 			fDefinition = False
 			continue
 		for strToken in mtch.group( 1 ).split( " " ):
+			if fPathways:
+				strToken = strToken.replace( ",", "|" )
 			astrEntry += filter( lambda s: s, re.split( '[,+]', re.sub( '[\-()]', "", strToken ) ) )

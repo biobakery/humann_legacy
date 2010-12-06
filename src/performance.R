@@ -1,36 +1,42 @@
 library( ROCR )
-#source( "library.R" )
 
 funcAcc <- function( adX, adY ) {
 
+	if( is.null( adX ) || is.null( adY ) ) {
+		return( 0 ) }
 	return( cor( adX, adY ) ) }
 
-funcClean <- function( frmeData, lsPathways ) {
+funcClean <- function( frmeData ) {
+	iCol <- 2
 
+	iRow <- 1
+	for( i in 1:nrow( frmeData ) ) {
+		if( !is.na( frmeData[i, iCol] ) ) {
+			iRow <- i
+			break } }
+	astrRows <- rownames( frmeData )[iRow:nrow( frmeData )]
+	astrCols <- colnames( frmeData )[iCol:ncol( frmeData )]
+	frmeData <- data.frame( frmeData[iRow:nrow( frmeData ), iCol:ncol( frmeData )] )
+	rownames( frmeData ) <- astrRows
+	colnames( frmeData ) <- astrCols
+	for( i in 1:ncol( frmeData ) ) {
+		frmeData[,i] <- type.convert( as.character( frmeData[,i] ) ) }
 	frmeData[is.na( frmeData )] <- 0
-	astrDitch <- c()
-	for( strPath in names( lsPathways ) ) {
-		if( length( lsPathways[[strPath]] ) < c_iSize ) {
-			astrDitch <- c(astrDitch, strPath) } }
-	astrRows <- setdiff( rownames( frmeData ), astrDitch )
-	if( !is.null( lsPathways ) ) {
-		astrRows <- intersect( astrRows, names( lsPathways ) ) }
-	frmeData <- frmeData[astrRows,]
-	
-	astrDitch <- c()
-	for( strCol in colnames( frmeData ) ) {
-		if( max( frmeData[,strCol] ) == 0 ) {
-			astrDitch <- c(astrDitch, strCol) } }
-	frmeData <- frmeData[,setdiff( colnames( frmeData ), astrDitch )]
+	if( ncol( frmeData ) > 1 ) {
+		aiDitch <- c()
+		for( iCol in 2:ncol( frmeData ) ) {
+			if( max( frmeData[,iCol] ) == 0 ) {
+				aiDitch <- c(aiDitch, iCol) } }
+		frmeData <- frmeData[,setdiff( 1:ncol( frmeData ), aiDitch )] }
 	
 	return( frmeData ) }
 
-funcData <- function( strCov, strAbd, lsPathways ) {
+funcData <- function( strCov, strAbd ) {
 	
 	frmeCov <- read.delim( strCov, row.names = 1 )
 	frmeAbd <- read.delim( strAbd, row.names = 1 )
-	frmeCov <- funcClean( frmeCov, lsPathways )
-	frmeAbd <- funcClean( frmeAbd, lsPathways )
+	frmeCov <- funcClean( frmeCov )
+	frmeAbd <- funcClean( frmeAbd )
 	
 	return( list( abd = frmeAbd, cov = frmeCov ) ) }
 
@@ -46,6 +52,9 @@ funcPlotAbd <- function( adRMSE, astrCom ) {
 	afRMSE <- adRMSE > 0
 	adRMSE <- adRMSE[afRMSE]
 	astrCom <- astrCom[afRMSE]
+	if( !length( adRMSE ) ) {
+		adRMSE <- c(0)
+		astrCom <- c("") }
 
 	par( mar = c(12, 4, 4, 11) + 0.1 )
 	dMin <- min( adRMSE ) * 0.99
@@ -82,6 +91,9 @@ funcPlotCovFact <- function( lsPred, astrCom, strFact, strName ) {
 	adAve <- c(mean( adAUC[aiIn] ), mean( adAUC[aiOut] ))
 	adStd <- c(sd( adAUC[aiIn] ), sd( adAUC[aiOut] ))
 	adStd <- adStd * ( max( adAve ) - min( adAve ) ) / mean( adStd )
+	if( !length( adAve ) ) {
+		adAve <- c(0)
+		adStd <- c(0) }
 	dStd <- max( adStd )
 	dMin <- ( min( adAve ) - dStd ) * 0.99
 	adX <- barplot( adAve, ylim = c(dMin, ( max( adAve ) + dStd ) * 1.01), xpd = FALSE,
@@ -130,12 +142,16 @@ funcPlotCovAUC <- function( lsPred, astrCom ) {
 	
 	adAUC <- c()
 	lsPerf <- funcPerfs( lsPred )
-	for( i in 1:length( lsPerf ) ) {
-		adAUC <- c(adAUC, funcAUC( lsPred[[i]] )) }
+	if( length( lsPerf ) ) {
+		for( i in 1:length( lsPerf ) ) {
+			adAUC <- c(adAUC, funcAUC( lsPred[[i]] )) } }
 	
-	afAUC <- adAUC > 0
+	afAUC <- adAUC > ( 1.001 * c_dFPR / 2 )
 	adAUC <- adAUC[afAUC]
 	astrCom <- astrCom[afAUC]
+	if( !length( adAUC ) ) {
+		adAUC <- c(0)
+		astrCom <- c("") }
 	
 	par( mar = c(14, 4, 4, 11) + 0.1 )
 	dMin <- min( adAUC ) * 0.99
@@ -143,7 +159,7 @@ funcPlotCovAUC <- function( lsPred, astrCom ) {
 		ylab = "pAUC", main = sprintf( "Coverage (pAUC %g)", c_dFPR ) )
 	text( adX, dMin * 0.999, astrCom, xpd = TRUE, srt = -45, adj = 0 ) }
 
-funcBase <- function( lsData, lsPathways, astrIn = c(), astrOut = c() ) {
+funcBase <- function( lsData, astrIn = c(), astrOut = c() ) {
 
 	frmeAbd <- lsData$abd
 	frmeCov <- lsData$cov
@@ -183,65 +199,64 @@ funcBase <- function( lsData, lsPathways, astrIn = c(), astrOut = c() ) {
 			sub( ".alignments", "", strCom ) ) ))
 
 		if( length( grep( "mtc", strCom ) ) ) {
-			aiAbd <- setdiff( 1:length( astrPAbd ), grep( '^((ko)|M)[0-9]+$', astrPAbd ) )
-			aiCov <- setdiff( 1:length( astrPCov ), grep( '^((ko)|M)[0-9]+$', astrPCov ) )
+			aiAbd <- setdiff( 1:length( astrPAbd ), grep( '^((ko)|M|K)[0-9]+$', astrPAbd ) )
+			aiCov <- setdiff( 1:length( astrPCov ), grep( '^((ko)|M|K)[0-9]+$', astrPCov ) )
 		} else if( length( grep( "mpm", strCom ) ) ) {
-			aiAbd <- grep( '^M[0-9]+$', astrPAbd )
-			aiCov <- grep( '^M[0-9]+$', astrPCov )
+			aiAbd <- grep( '^(M|K)[0-9]+$', astrPAbd )
+			aiCov <- grep( '^(M|K)[0-9]+$', astrPCov )
 		} else {
-			aiAbd <- grep( '^ko[0-9]+$', astrPAbd )
-			aiCov <- grep( '^ko[0-9]+$', astrPCov ) }
+			aiAbd <- grep( '^((ko)|K)[0-9]+$', astrPAbd )
+			aiCov <- grep( '^((ko)|K)[0-9]+$', astrPCov ) }
 		
 		if( ( strCom %in% colnames( frmeAbd ) ) && ( max( adGSAbd[aiAbd] ) > 0 ) ) {
-			dCur <- funcAcc( adGSAbd[aiAbd], frmeAbd[aiAbd, strCom] )
+			dCur <- funcAcc( adGSAbd[aiAbd] / sum( adGSAbd[aiAbd] ), frmeAbd[aiAbd, strCom] )
 		} else {
 			dCur <- 0 }
 		adRMSE <- c(adRMSE, dCur)
+		pCur <- NA
 		if( ( strCom %in% colnames( frmeCov ) ) && ( max( adGSCov[aiCov] ) > 0 ) ) {
-			pCur <- prediction( frmeCov[aiCov, strCom], adGSCov[aiCov] )
-		} else {
+			try( pCur <- prediction( frmeCov[aiCov, strCom], adGSCov[aiCov] ) ) }
+		if( is.na( pCur ) || ( class( pCur ) == "try-error" ) ) {
 			pCur <- prediction( c(0, 1, 0, 1), c(0, 0, 1, 1) ) }
 		lsPred <- c(lsPred, pCur) }
 	return( list( names = astrCom, rmse = adRMSE, pred = lsPred ) ) }
 
-funcScatter <- function( lsData, strTarget, lsPathways ) {
+funcScatter <- function( lsData, strTarget ) {
 
 	frmeAbd <- lsData$abd
-	strBase <- colnames( frmeAbd )[1]
-	astrRows <- rownames( frmeAbd )
-	if( !is.null( lsPathways ) ) {
-		astrRows <- c() 
-		for( strRow in intersect( names( lsPathways ), rownames( frmeAbd ) ) ) {
-			if( length( lsPathways[[strRow]] ) >= c_iSize ) {
-				astrRows <- c(astrRows, strRow) } } }
-	adGSAbd <- frmeAbd[astrRows, strBase]
-	adX <- frmeAbd[astrRows, strTarget]
-	ad <- c(adX, adGSAbd)
-	dMin <- min( ad )
-	dMax <- max( ad )
-	adLim <- c(0.99 * dMin, 1.01 * dMax)
-	plot( adX, adGSAbd, xlim = adLim, ylim = adLim, xlab = sprintf( "Predicted (r = %0.4f)",
-		funcAcc( adX, adGSAbd ) ), ylab = "Actual", main = "Abundance", pch = "o" )
-	lmod <- lm( adGSAbd ~ adX )
-	abline( reg = lmod )
-	abline( 0, 1, lwd = 2 ) }
-
-funcSAUC <- function( lsData, iCol, lsPathways ) {
-
-	lsTmp <- list()
-	strTarget <- colnames( lsData$abd )[iCol + 1]
-	for( strPath in names( lsPathways ) ) {
+	astrPaths <- c()
+	for( strPath in rownames( frmeAbd ) ) {
 		fOK <- TRUE
-		if( !length( grep( 'mtc', strTarget ) ) == !length( grep( '^((ko)|M)[0-9]+$', strPath ) ) ) {
+		if( !length( grep( 'mtc', strTarget ) ) == !length( grep( '^((ko)|M|K)[0-9]+$', strPath ) ) ) {
 			fOK <- FALSE }
 		if( !!length( grep( 'mpm', strTarget ) ) == !length( grep( '^M[0-9]+$', strPath ) ) ) {
 			fOK <- FALSE }
 		if( fOK ) {
-			lsTmp[[strPath]] <- lsPathways[[strPath]] } }
+			astrPaths <- c(strPath, astrPaths) } }
 
-	funcScatter( lsData, strTarget, lsTmp )
-	strTarget <- colnames( lsData$cov )[iCol + 1]
-	lsBase <- funcBase( lsData, lsTmp, c(strTarget) )
+	strBase <- colnames( frmeAbd )[1]
+	adGSAbd <- frmeAbd[astrPaths, strBase] / max( 1e-10, sum( frmeAbd[astrPaths, strBase] ) )
+	adX <- frmeAbd[astrPaths, strTarget]
+	ad <- c(adX, adGSAbd)
+	if( length( adX ) ) {
+		dMin <- min( ad )
+		dMax <- max( ad ) }
+	else {
+		adGSAbd <- c()
+		dMin <- 0
+		dMax <- 0 }
+	adLim <- c(0.99 * dMin, 1.01 * dMax)
+	plot( adX, adGSAbd, xlim = adLim, ylim = adLim, xlab = sprintf( "Predicted (r = %0.4f)",
+		funcAcc( adX, adGSAbd ) ), ylab = "Actual", main = "Abundance", pch = "o" )
+	if( length( adX ) ) {
+		lmod <- lm( adGSAbd ~ adX )
+		abline( reg = lmod )
+		abline( 0, 1, lwd = 2 ) } }
+
+funcSAUC <- function( lsData, iCol ) {
+
+	funcScatter( lsData, colnames( lsData$abd )[iCol + 1] )
+	lsBase <- funcBase( lsData, c(colnames( lsData$cov )[iCol + 1]) )
 	funcPlotCov( lsBase$pred, lsBase$names ) }
 	
 funcPathways <- function( strFile ) {
@@ -256,37 +271,36 @@ funcPathways <- function( strFile ) {
 c_iWidth	<- 4
 c_iHeight	<- 4
 c_dFPR		<- 0.1
-c_iSize		<- 4
 
 strOutput		<- "output/mock_stg_hc_04.pdf"
-strPathways		<- "data/pathwayc"
 strCoverage		<- "output/mock_stg_hc_04a.txt"
-strAbundance	<- "output/mock_stg_hc_04b.txt"
+strAbundance	<- ""
 astrArgs <- commandArgs( TRUE )
 if( length( astrArgs ) >= 1 ) {
 	strOutput <- astrArgs[1] }
 if( length( astrArgs ) >= 2 ) {
-	strPathways <- astrArgs[2] }
+	strCoverage <- astrArgs[2] }
 if( length( astrArgs ) >= 3 ) {
-	strCoverage <- astrArgs[3] }
-if( length( astrArgs ) >= 4 ) {
-	strAbundance <- astrArgs[4] }
+	strAbundance <- astrArgs[3] }
+if( !nchar( strAbundance ) ) {
+	strAbundance <- strCoverage }
 
-lsPathways <- funcPathways( strPathways )
-lsData <- funcData( strCoverage, strAbundance, lsPathways )
-iTypes <- min( 5, max( ncol( lsData$abd ), ncol( lsData$cov ) ) - 1 )
+lsData <- funcData( strCoverage, strAbundance )
+iTypes <- min( 5000, max( ncol( lsData$abd ), ncol( lsData$cov ) ) - 1 )
+if( !is.finite( iTypes ) ) {
+	iTypes <- 0 }
 
 fPDF <- length( grep( "\\.pdf$", strOutput ) )
 iWidth <- 1 + ( iTypes / 10 )
 if( fPDF ) {
 	pdf( strOutput, width = 2 * iWidth * c_iWidth, height = c_iHeight * ( 1 + iTypes ) )
 } else {
-	png( strOutput, units = "in", res = 160, width = 2 * iWidth * c_iWidth, height = c_iHeight * ( 1 + iTypes ) ) }
+	png( strOutput, units = "in", res = 160, width = 2 * ( iWidth + c_iWidth ), height = c_iHeight * ( 1 + iTypes ) ) }
 par( mfrow = c(1 + iTypes, 2) )
-lsBase <- funcBase( lsData, lsPathways )
+lsBase <- funcBase( lsData )
 funcPlotAbd( lsBase$rmse, lsBase$names )
 funcPlotCovAUC( lsBase$pred, lsBase$names )
 par( mar = c(5, 4, 4, 2) + 0.1 )
 for( iType in 1:iTypes ) {
-	funcSAUC( lsData, iType, lsPathways ) }
+	funcSAUC( lsData, iType ) }
 dev.off( )

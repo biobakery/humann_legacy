@@ -18,6 +18,8 @@ for iTable in range( len( astrTables ) ):
 			fFirst = False
 			aastrHeaders.append( astrData )
 			continue
+		if astrLine[0] == "#":
+			continue
 		aastrRow = hashResults.setdefault( astrLine[0], [] )
 		if len( aastrRow ) <= iTable:
 			aastrRow += [None] * ( 1 + iTable - len( aastrRow ) )

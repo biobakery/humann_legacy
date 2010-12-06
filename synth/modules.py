@@ -1,28 +1,28 @@
 #!/usr/bin/env python
 
+import math
+import pathway
 import sys
 
+c_iCov	= 1
+
 if len( sys.argv ) != 3:
-	raise Exception( "Usage: modules.py <org> <koc> < <modulec>" )
+	raise Exception( "Usage: modules.py <org> <koc> < <modulep>" )
 strTarget, strKOC = sys.argv[1:]
 
-setKOs = set()
+hashKOs = {}
 for strLine in open( strKOC ):
 	astrLine = strLine.strip( ).split( "\t" )
 	for strToken in astrLine[1:]:
 		strOrg, strGene = strToken.split( "#" )
 		if strOrg.lower( ) == strTarget:
-			setKOs.add( astrLine[0] )
-			break
+			hashKOs[astrLine[0]] = 1 + hashKOs.get( astrLine[0], 0 )
 
-for strLine in sys.stdin:
-	astrLine = strLine.strip( ).split( "\t" )
-	fOK = True
-	for strKO in astrLine[1:]:
-		if strKO not in setKOs:
-			fOK = False
-			break
-	if not fOK:
+apPaths = pathway.open( sys.stdin )
+for pPath in apPaths:
+	dCov = pPath.coverage( hashKOs )
+	if ( not dCov ) or ( len( pPath.tokens( ) ) * ( 1 - dCov ) ) > c_iCov:
 		continue
-	for strKO in astrLine[1:]:
-		print( "\t".join( (strKO, "path:" + astrLine[0]) ) )
+	for strKO in pPath.genes( ):
+		if hashKOs.get( strKO ):
+			print( "\t".join( (strKO, "path:" + pPath.id( )) ) )
