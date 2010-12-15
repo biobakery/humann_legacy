@@ -1,18 +1,25 @@
 #!/usr/bin/env python
 
+import pathway
 import sys
 
 c_fMedian	= True
 
 if len( sys.argv ) < 2:
-	raise Exception( "Usage: pathcov.py <keggc> [median=" + str(c_fMedian) + "] < <pathways.txt>" )
+	raise Exception( "Usage: pathcov.py <keggc> [modulep] [median=" + str(c_fMedian) + "] < <pathways.txt>" )
 strKEGGC = sys.argv[1]
-fMedian = c_fMedian if ( len( sys.argv ) <= 2 ) else ( int(sys.argv[2]) != 0 )
+strModuleP = None if ( len( sys.argv ) <= 2 ) else sys.argv[2]
+fMedian = c_fMedian if ( len( sys.argv ) <= 3 ) else ( int(sys.argv[3]) != 0 )
 
 hashKEGGs = {}
 for strLine in open( strKEGGC ):
 	astrLine = strLine.strip( ).split( "\t" )
 	hashKEGGs[astrLine[0]] = astrLine[1:]
+
+hashModules = {}
+if strModuleP:
+	for pPathway in pathway.open( open( strModuleP ) ):
+		hashModules[pPathway.id( )] = pPathway
 
 dAve = iAve = 0
 adScores = []
@@ -34,10 +41,24 @@ if adScores:
 	dMed = adScores[len( adScores ) / 2] if fMedian else ( sum( adScores ) / len( adScores ) )
 print( "PID	Coverage" )
 for strKEGG, hashKOs in hashScores.items( ):
+	astrKOs = hashKEGGs.get( strKEGG )
+	if astrKOs:
+		for strKO in astrKOs:
+			hashKOs.setdefault( strKO, 0 )
 	if not ( strKEGG and hashKOs ):
 		continue
-	iHits = 0
-	for strKO, dAb in hashKOs.items( ):
-		if dAb > dMed:
-			iHits += 1
-	print( "\t".join( (strKEGG, str(float(iHits) / len( hashKOs ))) ) )
+	pPathway = hashModules.get( strKEGG )
+	if pPathway:
+		hashCov = {}
+		for strKO, dAb in hashKOs.items( ):
+# Average works better than median since this is fairly lenient
+			if dAb > dAve:
+				hashCov[strKO] = dAb
+		dCov = pPathway.coverage( hashCov )
+	else:
+		iHits = 0
+		for strKO, dAb in hashKOs.items( ):
+			if dAb > dMed:
+				iHits += 1
+		dCov = float(iHits) / len( hashKOs )
+	print( "\t".join( (strKEGG, str(dCov)) ) )

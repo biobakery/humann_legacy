@@ -6,16 +6,16 @@ import re
 
 def isexclude( strInput ):
 
-	if re.search( 'mock[^_]', strInput ):
-		return True
+#	if re.search( 'mock[^_]', strInput ):
+#		return True
 #	if re.search( 'HMPZ', strInput ):
 #		return True
 
 	return (
-#		False
+		False
 #		( strInput.find( "338793263-700106436" ) < 0 ) and ( strInput.find( "mock" ) < 0 ) and
 #		not re.search( '[a-z]-7\d+-7\d+', strInput )
-		( strInput.find( "mock_" ) < 0 ) and ( strInput.find( "SRS" ) < 0 )
+#		( strInput.find( "mock_" ) < 0 ) and ( strInput.find( "SRS" ) < 0 )
 #		( strInput.find( "AnteriorNares" ) < 0 ) and ( strInput.find( "508703490-700038756" ) < 0 )
 #		strInput.find( "SRS" ) < 0
 	)
@@ -130,13 +130,17 @@ c_apProcessors				= [
 # One STD above =~ 0 (mean), STD below =~ nul (none)
 #	CProcessor( "02a",	"02b",	"nvd",	c_strProgTaxlim,
 #		[c_strFileTaxPC],					["1"] ),
+# Mean is most consistently best for abundance + coverage
+# Particularly in most limited data (mblastx with <=90% ID)
+#	CProcessor( "02a",	"02b",	"nve",	c_strProgTaxlim,
+#		[c_strFileTaxPC],					[] ),
 # Even naive taxonomic limitation substantially outperforms none
 	CProcessor( "12a",	"12b",	"nul",	c_strProgCat,
 		[],									["1"] ),
-# Mean is most consistently best for abundance + coverage
-# Particularly in most limited data (mblastx with <=90% ID)
-	CProcessor( "02a",	"02b",	"nve",	c_strProgTaxlim,
-		[c_strFileTaxPC],					[] ),
+# Providing the KOC file allows taxonomic limitation to also adjust for the
+# expected copy # of each KO based on organismal freq, which helps a good bit
+	CProcessor( "02a",	"02b",	"cop",	c_strProgTaxlim,
+		[c_strFileTaxPC, c_strFileKOC],		[] ),
 #===============================================================================
 # smoothing
 #===============================================================================
@@ -178,11 +182,9 @@ c_apProcessors				= [
 #	CProcessor( "03c",	"03d",	"nae",	c_strProgPathCov,
 #		[c_strFilePathwayC],				["0"] ),
 	CProcessor( "03c",	"03d",	"nve",	c_strProgPathCov,
-		[c_strFilePathwayC] ),
+		[c_strFilePathwayC, c_strFileModuleP] ),
 	CProcessor( "03d",	"04a",	"xpe",	c_strProgPathCovXP,
 		[c_strProgXipe] ),
-#	CProcessor( "03d",	"04a",	"xp2",	c_strProgPathCovXP,
-#		[c_strProgXipe] ),
 	CProcessor( "13c",	"04a",	"nve",	c_strProgPathCov,
 		[c_strFilePathwayC] ),
 #===============================================================================
@@ -191,11 +193,9 @@ c_apProcessors				= [
 # Median is horrid compared to average
 # But average of the upper half is better!
 	CProcessor( "03c",	"04b",	"nve",	c_strProgPathAb,
-		[c_strFilePathwayC] ),
-#	CProcessor( "03c",	"04b",	"nv2",	c_strProgPathAb,
-#		[c_strFilePathwayC],				["1", "1"] ),
+		[c_strFilePathwayC, c_strFileModuleP] ),
 	CProcessor( "13c",	"04b",	"nul",	c_strProgPathAb,
-		[c_strFilePathwayC],				["0"] ),
+		[c_strFilePathwayC],					["\"\"", "0"] ),
 ]
 c_aastrFinalizers			= [
 	[None,			c_strProgZero],

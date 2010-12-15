@@ -21,7 +21,7 @@ c_strInputSeqQUAL	= c_strInputSeqFA + c_strQual
 c_strDirSource		= "../src/"
 c_strDirData		= "../data/"
 c_strInputKOC		= c_strDirData + "koc"
-c_strInputModuleC	= c_strDirData + "modulec"
+c_strInputModuleP	= c_strDirData + "modulep"
 
 c_strTARBZ			= ".tar.bz2"
 c_strTXT			= ".txt"
@@ -230,7 +230,7 @@ for strOrganisms in c_astrOrganisms:
 		strPathway = c_strDirOutput + strOrg + c_strPathway + c_strLIST
 		strModule = strPathway.replace( c_strPathway, c_strModule )
 		astrPathways += [strPathway, strModule]
-		pE.Command( strModule, [c_strProgModules, c_strInputKOC, c_strInputModuleC], funcOrgModules )
+		pE.Command( strModule, [c_strProgModules, c_strInputKOC, c_strInputModuleP], funcOrgModules )
 		if not c_fFrozen:
 			pE.Command( strPathway, None, funcOrgFile )
 

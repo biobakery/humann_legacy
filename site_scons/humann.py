@@ -28,10 +28,10 @@ class CProcessor:
 
 	def in2out( pSelf, strIn ):
 
-		if ( pSelf.m_strSuffix and not re.search( c_strDirInput + '.*' +
-			pSelf.m_strSuffix + '$', strIn ) ) or \
-			( pSelf.m_strFrom and not re.search( '_' + pSelf.m_strFrom + '-',
-			strIn ) ):
+		fInput = re.search( c_strDirInput + '.*' + ( pSelf.m_strSuffix or "" ) + '$', strIn )
+		if ( pSelf.m_strSuffix and not fInput ) or \
+			( pSelf.m_strFrom and ( fInput or not
+			re.search( '_' + pSelf.m_strFrom + '-', strIn ) ) ):
 			return None
 
 		strIn = re.sub( '^.*' + c_strDirInput + '/', c_strDirOutput + "/",

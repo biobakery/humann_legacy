@@ -1,21 +1,27 @@
 #!/usr/bin/env python
 
+import pathway
 import sys
 
 c_fMedup	= True
-c_fSizer	= False
 
 if len( sys.argv ) < 2:
-	raise Exception( "Usage: pathab.py <keggc> [medup=" + str(c_fMedup) + "] [sizer=" + str(c_fSizer) + "] < <pathways.txt>" )
+	raise Exception( "Usage: pathab.py <keggc> [modulep] [medup=" + str(c_fMedup) + "] < <pathways.txt>" )
 strKEGGC = sys.argv[1]
-fMedup = c_fMedup if ( len( sys.argv ) <= 2 ) else ( int(sys.argv[2]) != 0 )
-fSizer = c_fSizer if ( len( sys.argv ) <= 3 ) else ( int(sys.argv[3]) != 0 )
+strModuleP = None if ( len( sys.argv ) <= 2 ) else sys.argv[2]
+fMedup = c_fMedup if ( len( sys.argv ) <= 3 ) else ( int(sys.argv[3]) != 0 )
 
 hashKEGGs = {}
 for strLine in open( strKEGGC ):
 	astrLine = strLine.strip( ).split( "\t" )
 	hashKEGGs[astrLine[0]] = astrLine[1:]
 
+hashModules = {}
+if strModuleP:
+	for pPathway in pathway.open( open( strModuleP ) ):
+		hashModules[pPathway.id( )] = pPathway
+
+hashKOs = {}
 hashScores = {}
 for strLine in sys.stdin:
 	strLine = strLine.strip( )
@@ -23,7 +29,11 @@ for strLine in sys.stdin:
 	if astrLine[0] == "GID":
 		continue
 	strKO, strKEGG, strScore = astrLine
-	hashScores.setdefault( strKEGG, {} )[strKO] = float(strScore)
+	dScore = float(strScore)
+	hashKOs[strKO] = max( dScore, hashKOs.get( strKO, 0 ) )
+	hashScores.setdefault( strKEGG, {} )[strKO] = dScore
+adScores = sorted( hashKOs.values( ) )
+d25, d50, d75 = (adScores[int(round( 0.25 * ( i + 1 ) * len( adScores ) ))] for i in range( 3 ))
 print( "PID	Abundance" )
 #sys.stderr.write( "%s\n" % "\t".join( ["PID", "Abundance"] + ( ["X"] * max( map( lambda a: len( a ), hashKEGGs.values( ) ) ) ) ) )
 for strKEGG, hashKOs in hashScores.items( ):
@@ -34,12 +44,10 @@ for strKEGG, hashKOs in hashScores.items( ):
 	adAbs = sorted( hashKOs.values( ) )
 #	dAb = adAbs[len( adAbs ) / 2] if fMedian else ( sum( adAbs ) / len( adAbs ) )
 #	sys.stderr.write( "%s\n" % "\t".join( str(d) for d in ( [strKEGG] + adAbs ) ) )
-	if fSizer:
-		adTmp = adAbs[( len( adAbs ) / 2 ):]
-		i = 5
-		dAb = ( ( i * adAbs[0] ) + sum( adTmp ) ) / ( i + len( adTmp ) )
-		if ( adAbs[-1] - dAb ) < dAb:
-			dAb = max( 0, dAb - adAbs[0] )
+	pPathway = hashModules.get( strKEGG )
+	if pPathway:
+		dAb = pPathway.abundance( hashKOs )
+#		dAb = max( 0, sum( adAbs ) / len( adAbs ) - d50 )
 	else:
 		if fMedup:
 			adAbs = adAbs[( len( adAbs ) / 2 ):]

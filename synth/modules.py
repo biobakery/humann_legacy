@@ -4,7 +4,7 @@ import math
 import pathway
 import sys
 
-c_iCov	= 1
+c_dCov	= 1.01
 
 if len( sys.argv ) != 3:
 	raise Exception( "Usage: modules.py <org> <koc> < <modulep>" )
@@ -21,7 +21,7 @@ for strLine in open( strKOC ):
 apPaths = pathway.open( sys.stdin )
 for pPath in apPaths:
 	dCov = pPath.coverage( hashKOs )
-	if ( not dCov ) or ( len( pPath.tokens( ) ) * ( 1 - dCov ) ) > c_iCov:
+	if ( not dCov ) or ( pPath.size( ) * ( 1 - dCov ) ) > c_dCov:
 		continue
 	for strKO in pPath.genes( ):
 		if hashKOs.get( strKO ):

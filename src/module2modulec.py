@@ -25,10 +25,19 @@ for strLine in sys.stdin:
 	if fDefinition:
 		mtch = re.search( '^(?:DEFINITION)?\s+(.+)$', strLine )
 		if not mtch:
+			i = 2
+			while i < len( astrEntry ):
+				if re.search( '\W$', astrEntry[i - 1] ):
+					astrEntry[i - 1] += astrEntry[i]
+					del astrEntry[i]
+				else:
+					i += 1
 			print( "\t".join( astrEntry ) )
 			fDefinition = False
 			continue
 		for strToken in mtch.group( 1 ).split( " " ):
+			strToken = re.sub( '[()]', "", strToken.strip( ).replace( "-", "+" ) )
 			if fPathways:
-				strToken = strToken.replace( ",", "|" )
-			astrEntry += filter( lambda s: s, re.split( '[,+]', re.sub( '[\-()]', "", strToken ) ) )
+				astrEntry.append( strToken.replace( ",", "|" ) )
+			else:
+				astrEntry += filter( lambda s: s, re.split( '[,+]', strToken ) )
