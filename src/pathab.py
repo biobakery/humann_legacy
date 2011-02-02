@@ -33,7 +33,10 @@ for strLine in sys.stdin:
 	hashKOs[strKO] = max( dScore, hashKOs.get( strKO, 0 ) )
 	hashScores.setdefault( strKEGG, {} )[strKO] = dScore
 adScores = sorted( hashKOs.values( ) )
-d25, d50, d75 = (adScores[int(round( 0.25 * ( i + 1 ) * len( adScores ) ))] for i in range( 3 ))
+if len( adScores ) > 2:
+	d25, d50, d75 = (adScores[int(round( 0.25 * ( i + 1 ) * len( adScores ) ))] for i in range( 3 ))
+else:
+	d25, d50, d75 = [adScores[0] if adScores else 0] * 3
 print( "PID	Abundance" )
 #sys.stderr.write( "%s\n" % "\t".join( ["PID", "Abundance"] + ( ["X"] * max( map( lambda a: len( a ), hashKEGGs.values( ) ) ) ) ) )
 for strKEGG, hashKOs in hashScores.items( ):

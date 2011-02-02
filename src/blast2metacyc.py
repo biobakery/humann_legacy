@@ -4,6 +4,8 @@ import array
 import math
 import sys
 
+c_strID		= "%identical"
+
 def enhash( strID, hashIDs, astrIDs, apScores = None ):
 	
 	iID = hashIDs.get( strID )
@@ -16,10 +18,10 @@ def enhash( strID, hashIDs, astrIDs, apScores = None ):
 	return iID
 
 if len( sys.argv ) < 2:
-	raise Exception( "Usage: blast2metacyc.py <mcc> [filter] [mblastx] [topn] < <blast.txt>" )
+	raise Exception( "Usage: blast2metacyc.py <mcc> [type={blastx,mblastx,mapx}] [filter] [topn] < <blast.txt>" )
 strMCC = sys.argv[1]
-dFilter = 0 if ( len( sys.argv ) <= 2 ) else float(sys.argv[2])
-fMBlastX = False if ( len( sys.argv ) <= 3 ) else ( int(sys.argv[3]) != 0 )
+strType = "blastx" if ( len( sys.argv ) <= 2 ) else sys.argv[2]
+dFilter = 0 if ( len( sys.argv ) <= 3 ) else float(sys.argv[3])
 iTopN = -1 if ( len( sys.argv ) <= 4 ) else int(sys.argv[4])
 
 hashCCM = {}
@@ -38,16 +40,28 @@ astrFroms = []
 apScores = []
 pTos = array.array( "L" )
 pScores = array.array( "f" )
+iID = 2 if ( strType == "blastx" ) else ( 4 if ( strType == "mblastx" ) else None )
 for strLine in sys.stdin:
 	strLine = strLine.rstrip( )
-	if ( not strLine ) or ( strLine[0] == "#" ):
+	if not strLine:
 		continue
 	astrLine = strLine.split( "\t" )
-	if not astrLine[0]:
+	if strLine[0] == "#":
+		if iID == None:
+			for i in range( len( astrLine ) ):
+				if astrLine[i] == c_strID:
+					iID = i
+					break
+		continue
+	if ( iID == None ) or ( not astrLine[0] ):
 		continue
 	try:
-		strTo, strFrom, strID, strScore = (astrLine[1], astrLine[0], astrLine[4], astrLine[2]) \
-			if fMBlastX else (astrLine[0], astrLine[2], astrLine[7], astrLine[-1])
+		if strType == "mblastx":
+			strTo, strFrom, strID, strScore = (astrLine[1], astrLine[0], astrLine[iID], astrLine[2])
+		elif strType == "mapx":
+			strTo, strFrom, strID, strScore = (astrLine[0], astrLine[2], astrLine[iID], astrLine[-1])
+		else:
+			strTo, strFrom, strID, strScore = (astrLine[1], astrLine[0], astrLine[iID], astrLine[-2])
 	except IndexError:
 		sys.stderr.write( "%s\n" % astrLine )
 		continue

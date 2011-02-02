@@ -18,11 +18,11 @@ def enhash( strID, hashIDs, astrIDs, apScores = None ):
 	return iID
 
 if len( sys.argv ) < 2:
-	raise Exception( "Usage: blast2enzymes.py <koc> [genels] [filter] [mblastx] [topn] < <blast.txt>" )
+	raise Exception( "Usage: blast2enzymes.py <koc> [genels] [type={blastx,mblastx,mapx}] [filter] [topn] < <blast.txt>" )
 strKOC = sys.argv[1]
 strGeneLs = None if ( len( sys.argv ) <= 2 ) else sys.argv[2]
-dFilter = 0 if ( len( sys.argv ) <= 3 ) else float(sys.argv[3])
-fMBlastX = False if ( len( sys.argv ) <= 4 ) else ( int(sys.argv[4]) != 0 )
+strType = "blastx" if ( len( sys.argv ) <= 3 ) else sys.argv[3]
+dFilter = 0 if ( len( sys.argv ) <= 4 ) else float(sys.argv[4])
 iTopN = -1 if ( len( sys.argv ) <= 5 ) else int(sys.argv[5])
 
 hashGeneLs = {}
@@ -57,7 +57,7 @@ astrFroms = []
 apScores = []
 pTos = array.array( "L" )
 pScores = array.array( "f" )
-iID = 4 if fMBlastX else None
+iID = 2 if ( strType == "blastx" ) else ( 4 if ( strType == "mblastx" ) else None )
 for strLine in sys.stdin:
 	strLine = strLine.rstrip( )
 	if not strLine:
@@ -75,8 +75,12 @@ for strLine in sys.stdin:
 	if iID == None:
 		continue
 	try:
-		strTo, strFrom, strID, strScore = (astrLine[1], astrLine[0], astrLine[iID], astrLine[2]) \
-			if fMBlastX else (astrLine[0], astrLine[2], astrLine[iID], astrLine[-1])
+		if strType == "mblastx":
+			strTo, strFrom, strID, strScore = (astrLine[1], astrLine[0], astrLine[iID], astrLine[2])
+		elif strType == "mapx":
+			strTo, strFrom, strID, strScore = (astrLine[0], astrLine[2], astrLine[iID], astrLine[-1])
+		else:
+			strTo, strFrom, strID, strScore = (astrLine[1], astrLine[0], astrLine[iID], astrLine[-2])
 	except IndexError:
 		sys.stderr.write( "%s\n" % astrLine )
 		continue

@@ -4,18 +4,24 @@ import re
 import sys
 
 if len( sys.argv ) != 1:
-	raise Exception( "Usage: metacyc2mcc.py < <uniprot-seq-ids.txt>" )
+	raise Exception( "Usage: metacyc2mcc.py < <reactions.dat>" )
 
-strID = astrGenes = None
+strID = strEC = astrGenes = None
 for strLine in sys.stdin:
-	mtch = re.search( '\(+(\S+)(.+)', strLine )
+	mtch = re.search( r'^UNIQUE-ID\s+-\s+(\S+)', strLine )
 	if mtch:
-		strID = re.sub( '\|$', "", re.sub( '^\|', "", mtch.group( 1 ) ) )
-		strLine = mtch.group( 2 )
+		strID = mtch.group( 1 )
+		strEC = ""
 		astrGenes = []
-	if astrGenes == None:
 		continue
-	astrGenes += [strCur.replace( "\"", "" ) for strCur in strLine.strip( ).split( " " )]
-	mtch = re.search( '\)\s*$', strLine )
+	mtch = re.search( r'^DBLINKS\s+-\s+\(\s*UNIPROT\s+"([^"]+)"', strLine )
 	if mtch:
-		print( "\t".join( [strID] + astrGenes ) )
+		astrGenes.append( mtch.group( 1 ) )
+		continue
+	mtch = re.search( r'^EC-NUMBER\s+\-\s+(\S+)', strLine )
+	if mtch:
+		strEC = mtch.group( 1 )
+		continue
+	if strLine.startswith( "//" ) and astrGenes:
+		print( "\t".join( [strID, strEC] + astrGenes ) )
+		continue

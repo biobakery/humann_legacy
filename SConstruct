@@ -11,6 +11,7 @@ def isexclude( strInput ):
 #	if re.search( 'HMPZ', strInput ):
 #		return True
 
+#	mtch = re.search( '(SRS\d+)', strInput )
 	return (
 		False
 #		( strInput.find( "338793263-700106436" ) < 0 ) and ( strInput.find( "mock" ) < 0 ) and
@@ -18,6 +19,7 @@ def isexclude( strInput ):
 #		( strInput.find( "mock_" ) < 0 ) and ( strInput.find( "SRS" ) < 0 )
 #		( strInput.find( "AnteriorNares" ) < 0 ) and ( strInput.find( "508703490-700038756" ) < 0 )
 #		strInput.find( "SRS" ) < 0
+#		( not mtch ) or ( mtch.group( 1 ) not in set(["SRS055982", "SRS024075", "SRS064774", "SRS056323", "SRS024281", "SRS052988", "SRS065431", "SRS017156"]) )
 	)
 
 c_strDirInput				= "input"
@@ -35,76 +37,73 @@ c_apProcessors				= [
 #===============================================================================
 # mapx 100 samples
 #===============================================================================
-	CProcessor( ".txt.bz2",			"01",	"keg",	c_strProgBlast2Enzymes,
-		[c_strFileKOC, c_strFileGeneLs],	[],			True ),
-	CProcessor( ".txt.bz2",			"11",	"mtc",	c_strProgBlast2Metacyc,
-		[c_strFileMCC],						[],			True ),
+	CProcessor( ".txt.bz2",			"00",	"hit",	c_strProgBlast2Hits,
+		[],									["mapx"],		True,	True ),
 #===============================================================================
 # mapx synthetic community
 #===============================================================================
-# No reason to include identical hits
-#	CProcessor( ".txt.gz",			"01",	"keg",	c_strProgBlast2Enzymes,
-#		[c_strFileKOC, c_strFileGeneLs],	[],			True ),
 # Keeping just the top 20 hits doesn't generally hurt performance
-#	CProcessor( ".txt.gz",			"01",	"ktt",	c_strProgBlast2Enzymes,
-#		[c_strFileKOC, c_strFileGeneLs],	["0.98", "0", "20"],	True ),
-###
-#	CProcessor( ".txt.gz",			"01",	"kna",	c_strProgBlast2Enzymes,
-#		[c_strFileKOC, c_strFileGeneLs],	["1"],		True ),
-#	CProcessor( ".txt.gz",			"01",	"knb",	c_strProgBlast2Enzymes,
-#		[c_strFileKOC, c_strFileGeneLs],	["0.98"],	True ),
-	CProcessor( ".txt.gz",			"01",	"knc",	c_strProgBlast2Enzymes,
-		[c_strFileKOC, c_strFileGeneLs],	["0.9"],	True ),
-	CProcessor( ".txt.gz",			"11",	"mtc",	c_strProgBlast2Metacyc,
-		[c_strFileMCC],						[],			True ),
+#	CProcessor( ".txt.gz",			"00",	"htt",	c_strProgBlast2Hits,
+#		[],									["mapx", "0.98", "20"],		True,	True ),
+# No reason to include identical hits
+#	CProcessor( ".txt.gz",			"00",	"hta",	c_strProgBlast2Hits,
+#		[],									["mapx", "1"],				True,	True ),
+#	CProcessor( ".txt.gz",			"00",	"htb",	c_strProgBlast2Hits,
+#		[],									["mapx", "0.98"],			True,	True ),
+	CProcessor( ".txt.gz",			"00",	"hit",	c_strProgBlast2Hits,
+		[],									["mapx"],		True,	True ),
 #===============================================================================
 # mblastx synthetic community
 #===============================================================================
-# No reason to include identical hits
-#	CProcessor( "_mblastxv2.0.8.gz",	"01",	"keg",	c_strProgBlast2Enzymes,
-#		[c_strFileKOC, c_strFileGeneLs],	["0", "1"],	True ),
 # Keeping just the top 20 hits doesn't generally hurt performance
-#	CProcessor( "_mblastxv2.0.8.gz",	"01",	"ktt",	c_strProgBlast2Enzymes,
-#		[c_strFileKOC, c_strFileGeneLs],	["0.98", "1", "20"],	True ),
-###
-#	CProcessor( "_mblastxv2.0.8.gz",	"01",	"kna",	c_strProgBlast2Enzymes,
-#		[c_strFileKOC, c_strFileGeneLs],	["1", "1"],				True ),
-#	CProcessor( "_mblastxv2.0.8.gz",	"01",	"knb",	c_strProgBlast2Enzymes,
-#		[c_strFileKOC, c_strFileGeneLs],	["0.98", "1"],			True ),
-	CProcessor( "_mblastxv2.0.8.gz",	"01",	"knc",	c_strProgBlast2Enzymes,
-		[c_strFileKOC, c_strFileGeneLs],	["0.9", "1"],			True ),
-	CProcessor( "_mblastxv2.0.8.gz",	"01",	"kmc",	c_strProgBlast2Enzymes,
-		[c_strFileKOC, c_strFileGeneLs],	["0.9", "1", "1"],		True ),
-	CProcessor( "_mblastxv2.0.8.gz",	"11",	"mtc",	c_strProgBlast2Metacyc,
-		[c_strFileMCC],						["0", "1"],				True ),
+#	CProcessor( "_mblastxv2.0.8.gz",	"00",	"htt",	c_strProgBlast2Hits,
+#		[],									["mblastx", "0.9", "20"],	True,	True ),
+# No reason to include identical hits
+#	CProcessor( "_mblastxv2.0.8.gz",	"00",	"hta",	c_strProgBlast2Hits,
+#		[],									["mblastx", "1"],			True,	True ),
+#	CProcessor( "_mblastxv2.0.8.gz",	"00",	"htb",	c_strProgBlast2Hits,
+#		[],									["mblastx", "0.98"],		True,	True ),
+	CProcessor( "_mblastxv2.0.8.gz",	"00",	"htc",	c_strProgBlast2Hits,
+		[],									["mblastx", "0.9"],			True,	True ),
+	CProcessor( "_mblastxv2.0.8.gz",	"00",	"hit",	c_strProgBlast2Hits,
+		[],									["mblastx"],	True,	True ),
 #===============================================================================
 # mapx 5 samples
 #===============================================================================
-	CProcessor( ".alignments.gz",	"01",	"keg",	c_strProgBlast2Enzymes,
-		[c_strFileKOC, c_strFileGeneLs],	[],			True ),
-	CProcessor( ".alignments.gz",	"11",	"mtc",	c_strProgBlast2Metacyc,
-		[c_strFileMCC],						[],			True ),
+	CProcessor( ".alignments.gz",	"00",	"hit",	c_strProgBlast2Hits,
+		[],									["mapx"],		True,	True ),
 #===============================================================================
 # annotations mock communities
 #===============================================================================
 	CProcessor( ".tab",				"01",	"keg",	c_strProgTab2Enzymes,
-		[c_strInputMockrefs],				[],			True ),
+		[c_strInputMockrefs],				[],				True ),
 	CProcessor( ".jgi",				"01",	"keg",	c_strProgJGI2Enzymes,
-		[c_strFileCOGC],					[],			True ),
+		[c_strFileCOGC],					[],				True ),
 	CProcessor( ".jcvi",			"01",	"keg",	c_strProgJCVI2Enzymes,
-		[c_strFileECC],						[],			True ),
+		[c_strFileECC],						[],				True ),
 #===============================================================================
 # HMP mblastx data
 #===============================================================================
-	CProcessor( ".out.gz",			"01",	"keg",	c_strProgBlast2Enzymes,
-		[c_strFileKOC, c_strFileGeneLs],	["0", "1"],	True ),
+	CProcessor( ".out.gz",			"00",	"keg",	c_strProgBlast2Hits,
+		[],									["mblastx"],	True,	True ),
 #===============================================================================
-# HMP KO data
+# HMP KO + MetaCyc data
 #===============================================================================
 	CProcessor( "__01-keg.txt",		"02a",	"mpt",	c_strProgEnzymes2PathwaysMP,
-		[c_strFileMP, c_strFileKEGGC],		[],			True ),
+		[c_strFileMP, c_strFileKEGGC],		[],				True ),
 	CProcessor( "__01-keg.txt",		"02a",	"mpm",	c_strProgEnzymes2PathwaysMP,
-		[c_strFileMP, c_strFileModuleC],	[],			True ),
+		[c_strFileMP, c_strFileModuleC],	[],				True ),
+	CProcessor( "__11-mtc.txt",		"02a",	"mpy",	c_strProgEnzymes2PathwaysMP,
+		[c_strFileMP, c_strFileMCPC],		[],				True ),
+#===============================================================================
+# hits -> enzymes
+#===============================================================================
+	CProcessor( "00",	"01",	"keg",	c_strProgHits2Enzymes,
+		[c_strFileKOC, c_strFileGeneLs] ),
+	CProcessor( "00",	"11",	"mtc",	c_strProgHits2Metacyc,
+		[c_strFileMCC] ),
+	CProcessor( "00",	"99",	"mtr",	c_strProgHits2Metarep,
+		[c_strFileGeneLs] ),
 #===============================================================================
 # enzymes -> pathways
 #===============================================================================

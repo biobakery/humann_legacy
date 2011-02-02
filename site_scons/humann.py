@@ -9,7 +9,7 @@ import sys
 class CProcessor:
 
 	def __init__( pSelf, strFrom, strTo, strID, strProcessor, astrDeps,
-		astrArgs = [], fInput = False ):
+		astrArgs = [], fInput = False, fGzip = False ):
 
 		pSelf.m_strSuffix = pSelf.m_strFrom = None
 		if fInput:
@@ -21,6 +21,7 @@ class CProcessor:
 		pSelf.m_strProcessor = strProcessor
 		pSelf.m_astrDeps = astrDeps
 		pSelf.m_astrArgs = astrArgs
+		pSelf.m_fGzip = fGzip
 
 	def deps( pSelf ):
 
@@ -34,21 +35,27 @@ class CProcessor:
 			re.search( '_' + pSelf.m_strFrom + '-', strIn ) ) ):
 			return None
 
+		if not fInput:
+			strIn = re.sub( '\\.gz$', "", strIn )
 		strIn = re.sub( '^.*' + c_strDirInput + '/', c_strDirOutput + "/",
 			strIn )
-		return re.sub( ( pSelf.m_strSuffix + '()$' ) if pSelf.m_strSuffix else
+		strRet = re.sub( ( pSelf.m_strSuffix + '()$' ) if pSelf.m_strSuffix else
 			( '_' + pSelf.m_strFrom + '(-.*)' + c_strSuffixOutput + '$' ),
-			"_" + pSelf.m_strTo + "\\1-" + pSelf.m_strID + c_strSuffixOutput,
-			strIn )
+			"_" + pSelf.m_strTo + "\\1-" + pSelf.m_strID + c_strSuffixOutput, strIn )
+		if pSelf.m_fGzip:
+			strRet += ".gz"
+		return strRet
 
 	def out2in( pSelf, strOut ):
 
+		if pSelf.m_fGzip:
+			strOut = re.sub( '\\.gz$', "", strOut )
 		if pSelf.m_strSuffix:
 			strOut = re.sub( '^.*/', c_strDirInput + "/", re.sub(
 				c_strSuffixOutput + '$', pSelf.m_strSuffix, strOut ) )
-		return re.sub( '_' + pSelf.m_strTo + '(.*)-' + pSelf.m_strID,
-			( "_" + pSelf.m_strFrom + "\\1" ) if pSelf.m_strFrom else "",
-			strOut )
+		strRet = re.sub( '_' + pSelf.m_strTo + '(.*)-' + pSelf.m_strID,
+			( "_" + pSelf.m_strFrom + "\\1" ) if pSelf.m_strFrom else "", strOut )
+		return strRet
 		
 	def cmd( pSelf ):
 		
@@ -59,8 +66,10 @@ class CProcessor:
 		def rn( target, source, env, pSelf = pSelf ):
 		
 			strCmd, strT, astrSs = cts( target, source )
-			return ex( out( " ".join( (strCmd, astrSs[0], "|", pSelf.cmd( )) ),
-				strT ) )
+			strCmd = " ".join( (strCmd, astrSs[0], "|", pSelf.cmd( )) )
+			if pSelf.m_fGzip:
+				strCmd += " | gzip -c"
+			return ex( out( strCmd, strT ) )
 			
 		return rn
 
@@ -76,7 +85,7 @@ c_strFileMapKEGGTAB			= data( "map_title.tab" )
 c_strFileKO					= data( "ko" )
 c_strFileGenesPEP			= data( "genes.pep" )
 c_strFileMetaCyc			= data( "meta.tar.gz" )
-c_strFileMetaCycGenes		= data( "uniprot-seq-ids.dat" )
+c_strFileMetaCycGenes		= data( "reactions.dat" )
 c_strFileMetaCycPaths		= data( "pathways.dat" )
 c_strFileKOC				= data( "koc" )
 c_strFileMCC				= data( "mcc" )
@@ -98,8 +107,10 @@ def prog( strFile ):
 #===============================================================================
 # Pipeline scripts
 #===============================================================================
-c_strProgBlast2Enzymes		= prog( "blast2enzymes.py" )
-c_strProgBlast2Metacyc		= prog( "blast2metacyc.py" )
+c_strProgBlast2Hits			= prog( "blast2hits.py" )
+c_strProgHits2Enzymes		= prog( "hits2enzymes.py" )
+c_strProgHits2Metacyc		= prog( "hits2metacyc.py" )
+c_strProgHits2Metarep		= prog( "hits2metarep.py" )
 c_strProgTab2Enzymes		= prog( "tab2enzymes.py" )
 c_strProgJGI2Enzymes		= prog( "jgi2enzymes.py" )
 c_strProgJCVI2Enzymes		= prog( "jcvi2enzymes.py" )
@@ -222,7 +233,7 @@ def main( hashVars ):
 	
 	def funcFileModule( target, source, env ):
 		strT, astrSs = ts( target, source )
-		return download( "ftp://ftp.genome.jp/pub/kegg/pathway/module", strT )
+		return download( "ftp://ftp.genome.jp/pub/kegg/module/module", strT )
 	pE.Command( c_strFileModule, None, funcFileModule )
 	ret( pE, c_strFileModule )
 	pE.Command( c_strFileModuleC, [c_strFileModule, c_strProgModule2ModuleC], rn )
@@ -268,7 +279,7 @@ def main( hashVars ):
 	def funcFileMetaCycFile( target, source, env ):
 		strT, astrSs = ts( target, source )
 		strOut, strIn = os.path.basename( strT ), astrSs[0]
-		strPath = "14.5/data/"
+		strPath = "14.6/data/"
 		return ( ex( " ".join( ("tar", "-C", c_strDirData, "-mxzf", strIn, strPath + strOut) ) ) or
 			ex( "mv " + c_strDirData + "/" + strPath + strOut + " " + strT ) )
 	for strFile in (c_strFileMetaCycGenes, c_strFileMetaCycPaths):
@@ -331,7 +342,8 @@ def main( hashVars ):
 	hashTo = {}
 	for strTo in astrTo:
 		pMatch = re.search( '_(\d+.*-\S+)' + c_strSuffixOutput + '$', strTo )
-		hashTo.setdefault( pMatch.group( 1 ), [] ).append( strTo )
+		if pMatch:
+			hashTo.setdefault( pMatch.group( 1 ), [] ).append( strTo )
 
 	hashPerf = {}
 	for fileSynth in \
