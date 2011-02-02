@@ -16,7 +16,7 @@ If you use this software, please cite our paper:
 "Scalable metabolic pathway reconstruction from metagenomic data"
 ***Citation here***
 
-Many thanks to the NIH and to the entire Human Microbiome Project team for making the HMP possible and for the many collaborators who helped to make HUMAnN a reality.  Sahar Abubucker and Makedonka Mitreva (Washington University) were invaluable as co-leaders of the Metabolic Reconstruction group, the pipeline incorporates software from Yuzhen Ye (Indiana University) and Beltran Rodriguez-Mueller (SDSU), and specific contributors include Jeremy Zucker (Broad Institute), Brandi Cantarel (UMD), Qiandong Zeng (Broad Institute), and many others.
+Many thanks to the NIH and to the entire Human Microbiome Project team for making the HMP possible and for the many collaborators who helped to make HUMAnN a reality.  Sahar Abubucker and Makedonka Mitreva (Washington University) co-led the Metabolic Reconstruction group, the pipeline incorporates software from Yuzhen Ye (Indiana University), Beltran Rodriguez-Mueller (SDSU), and Pat Schloss (University of Michigan), and specific contributors include Alyx Schubert (University of Michigan), Jeremy Zucker (Broad Institute), Brandi Cantarel (UMD), Qiandong Zeng (Broad Institute), and many others.
 
 BASIC OPERATION
 ====
@@ -103,6 +103,8 @@ Three or more files per input including:
 
 * The relative abundances of each pathway.  By default tagged as type "04b".  Two columns of tab-delimited text: pathid abundance.
 
+* Optionally, a table of individual gene abundances appropriate for loading into METAREP.  By default tagged as type "99".  Five columns of tab-delimited text: geneid abundance e-score %identical identical.  The abundance is relative and calculated as in HUMAnN's gene family abundances; e-score, percent identity, and identity length are averaged over all reads mapping to each gene in the input translated BLAST results.
+
 Three or more merged files are also produced, all tab-delimited text:
 
 * A table containing the relative abundances of all genes in any input metagenomes.  By default named as "01-*.txt".
@@ -110,6 +112,8 @@ Three or more merged files are also produced, all tab-delimited text:
 * A table containing the coverages of all pathways in any input files.  By default named as "04a-*.txt".
 
 * A table containing the relative abundances of all pathways in any input files.  By default named as "04b-*.txt".
+
+* A table containing the relative abundances of all individual genes in any input files.  By default named as "99-*.txt".
 
 Please see below for a detailed description of the ways in which these files are produced and named.
 
@@ -149,11 +153,19 @@ The SConstruct file includes a configurable set of processing modules used to co
 
 7. A boolean flag, True if the processor should be used for initial input files and False (or omitted) otherwise.  In the latter case, the processor will only be used on intermediate files matching its input type.
 
+8. A boolean flag, True if the output should be gzipped and False (or omitted) otherwise.  Subsequent processors will automatically ungzip compressed input files.
+
 By default, the following output file types are produced:
+
+*_00-*.txt.gz
+----
+Generated from raw BLAST results.
+A condensed binary representation of translated BLAST results, abstracted from and independent of the specific format (blastx/mblastx/mapx) in which they are provided.
+
 
 *_01-*.txt
 ----
-Generated from raw BLAST results.
+Generated from *_00-*.txt.gz.
 Relative gene abundances as calculated from BLAST results in which each read has been mapped to zero or more gene identifiers based on quality of match.  Total weight of each read is 1.0, distributed over all gene (KO) matches by quality.
 
 *_02a-*.txt
@@ -186,11 +198,16 @@ Pathway coverage (presence/absence) measure, i.e. relative confidence of each pa
 Generated from *_03b-*.txt.
 Pathway abundance measure, i.e. relative "copy number" of each pathway in the sample.  On the same relative abundance scale (0 and up) as the original gene abundances _01-*.txt.
 
-*_04a-*.txt
+*_99-*.txt
+----
+Generated from *_00-*.txt.gz.
+Per-sample gene abundance tables formatted for loading into METAREP.  On the same relative abundance scale (0 and up) as the original gene abundances _01-*.txt.
+
+04a-*.txt
 ----
 Combined pathway coverage matrix for all samples.
 
-*_04b-*.txt
+04b-*.txt
 ----
 Combined pathway abundance matrix for all samples, normalized per column.
 
@@ -205,6 +222,10 @@ Gene to pathway assignment performed using MinPath.
 *_02*-nve*.txt
 ----
 Gene to pathway assignment performed naively using all pathways.
+
+*_02*-cop*.txt
+----
+Pathway abundances adjusted based on A) taxonomic limitation and B) the expected copy number of each gene in the detected organisms.
 
 *_03a*-wbl*.txt
 ----
@@ -241,3 +262,8 @@ v0.9, 12-06-10
 ----
 * Initial modularization of HUMAnN code
 * First application to HMP production data (mblastx)
+
+v0.91, 02-02-11
+----
+* Refinement of documentation and KEGG/MetaCyc version updates
+* Addition of METAREP output module
