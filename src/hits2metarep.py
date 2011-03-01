@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import array
 import hits
 import math
 import sys
@@ -30,6 +31,10 @@ if strGeneLs:
 	for i in range( len( astrGenes ) ):
 		hashGeneLs[astrGenes[i]] = aiGenes[i] / dAve
 
+pAbundances = array.array( "f" )
+pEs = array.array( "f" )
+pIDs = array.array( "f" )
+pCovs = array.array( "f" )
 hashGenes = {}
 for iFrom in range( pHits.get_froms( ) ):
 	strFrom = pHits.get_from( iFrom )
@@ -41,9 +46,14 @@ for iFrom in range( pHits.get_froms( ) ):
 	for i in range( len( astrTos ) ):
 		strTo, adCur = (a[i] for a in (astrTos, aadScores))
 		dScore = math.exp( -adCur[0] ) / hashGeneLs.get( strTo, 1 )
-		hashGenes.setdefault( strTo, [] ).append( [dScore / dSum] + adCur )
+		iTo = len( pAbundances )
+		hashGenes.setdefault( strTo, [] ).append( iTo )
+		pAbundances.append( dScore / dSum )
+		pEs.append( adCur[0] )
+		pIDs.append( adCur[1] )
+		pCovs.append( adCur[2] )
 
-for strGene, aadHits in hashGenes.items( ):
-	adScores = [median( [a[i] for a in aadHits] ) for i in range( 1, len( aadHits[0] ) )]
+for strGene, aiTos in hashGenes.items( ):
+	adScores = [median( sorted( p[i] for i in aiTos ) ) for p in (pEs, pIDs, pCovs)]
 	print( "\t".join( [strGene] + [( "%g" % d ) for d in
-		( [sum( a[0] for a in aadHits )] + adScores )] ) )
+		( [sum( pAbundances[i] for i in aiTos )] + adScores )] ) )
