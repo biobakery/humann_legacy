@@ -5,35 +5,53 @@ import logging.handlers
 import re
 
 def isexclude( strInput ):
+	"""
+	Given the name of an input file, return True if it should be skipped.  Useful for
+	matching only a specific set (by inclusion) or removing a specific set (by exclusion)
+	using regular expression patterns or raw filenames.
+	"""
 
-#	if re.search( 'mock[^_]', strInput ):
-#		return True
-#	if re.search( 'HMPZ', strInput ):
+# Example: exclude any file whose filename ends with ".example".
+#	if re.search( r'\.example$', strInput ):
 #		return True
 
-#	mtch = re.search( '(SRS\d+)', strInput )
+# By default, exclude nothing
 	return (
 		False
-#		( strInput.find( "338793263-700106436" ) < 0 ) and ( strInput.find( "mock" ) < 0 ) and
-#		not re.search( '[a-z]-7\d+-7\d+', strInput )
-#		( strInput.find( "mock_" ) < 0 ) and ( strInput.find( "SRS" ) < 0 )
-#		( strInput.find( "AnteriorNares" ) < 0 ) and ( strInput.find( "508703490-700038756" ) < 0 )
-#		strInput.find( "SRS" ) < 0
-#		( not mtch ) or ( mtch.group( 1 ) not in set(["SRS055982", "SRS024075", "SRS064774", "SRS056323", "SRS024281", "SRS052988", "SRS065431", "SRS017156"]) )
+# Example: exclude any file whose filename does not contain "example".
+#		( strInput.find( "example" ) < 0 )
 	)
 
+# Directory name scanned for input files
 c_strDirInput				= "input"
+# Directory into which all output files are placed
 c_strDirOutput				= "output"
-c_strInputMetadata			= c_strDirInput + "/hmp_metadata.txt"
+# Filename from which metadata annotations are read; can be excluded (see below)
+c_strInputMetadata			= c_strDirInput + "/hmp_metadata.dat"
+# Filename from which column names to remove are read; can be excluded (see below)
+c_strInputExclude			= c_strDirInput + "/hmp_exclude.dat"
+# Optional: MetaCyc distribution tarball, will be used for pathways if present
+c_strInputMetaCyc			= c_strDirInput + "/meta.tar.gz"
+c_strVersionMetaCyc			= "14.6"
+# Optional: Generate synthetic community performance descriptors
+# Note: Should build synthetic communities in the "synth" subdirectory if enabled
+c_fMocks					= True
 
+# Filename into which all processing steps are logged for provenance tracking
 logging.basicConfig( filename = "provenance.txt", level = logging.INFO,
 	format = '%(asctime)s %(levelname)-8s %(message)s' )
 c_logrFileProvenanceTxt		= logging.getLogger( )
 
-# TODO: remove mockrefs
-c_strInputMockrefs			= "mockrefs/mockrefs.txt"
-
 c_apProcessors				= [
+# Each input processor takes up to eight arguments:
+#   The input filename extension
+#   The output numerical type tag (identifying the type of data; see readme.txt)
+#   The output textual processor label (identifying the way in which the data were generated; see readme.txt)
+#   The processing script
+#   A list of zero or more files provided on the command line to the processing script
+#   A list of zero or more non-file arguments provided on the command line to the script
+#   True if the processor is for input files (and not intermediate files)
+#   True if the processor's output should be gzip compressed
 #===============================================================================
 # mapx 100 samples
 #===============================================================================
@@ -75,8 +93,6 @@ c_apProcessors				= [
 #===============================================================================
 # annotations mock communities
 #===============================================================================
-	CProcessor( ".tab",				"01",	"keg",	c_strProgTab2Enzymes,
-		[c_strInputMockrefs],				[],				True ),
 	CProcessor( ".jgi",				"01",	"keg",	c_strProgJGI2Enzymes,
 		[c_strFileCOGC],					[],				True ),
 	CProcessor( ".jcvi",			"01",	"keg",	c_strProgJCVI2Enzymes,
@@ -93,17 +109,27 @@ c_apProcessors				= [
 		[c_strFileMP, c_strFileKEGGC],		[],				True ),
 	CProcessor( "__01-keg.txt",		"02a",	"mpm",	c_strProgEnzymes2PathwaysMP,
 		[c_strFileMP, c_strFileModuleC],	[],				True ),
-	CProcessor( "__11-mtc.txt",		"02a",	"mpy",	c_strProgEnzymes2PathwaysMP,
-		[c_strFileMP, c_strFileMCPC],		[],				True ),
+#	CProcessor( "__11-mtc.txt",		"02a",	"mpy",	c_strProgEnzymes2PathwaysMP,
+#		[c_strFileMP, c_strFileMCPC],		[],				True ),
+
+#------------------------------------------------------------------------------ 
+
+# Each non-input processor takes up to six arguments:
+#   The input numerical type tag
+#   The output numerical type tag
+#   The output textual processor label
+#   The processing script
+#   A list of zero or more files provided on the command line to the processing script
+#   A list of zero or more non-file arguments provided on the command line to the script
 #===============================================================================
 # hits -> enzymes
 #===============================================================================
 	CProcessor( "00",	"01",	"keg",	c_strProgHits2Enzymes,
 		[c_strFileKOC, c_strFileGeneLs] ),
-	CProcessor( "00",	"11",	"mtc",	c_strProgHits2Metacyc,
-		[c_strFileMCC] ),
-	CProcessor( "00",	"99",	"mtr",	c_strProgHits2Metarep,
-		[c_strFileGeneLs] ),
+#	CProcessor( "00",	"11",	"mtc",	c_strProgHits2Metacyc,
+#		[c_strFileMCC] ),
+#	CProcessor( "00",	"99",	"mtr",	c_strProgHits2Metarep,
+#		[c_strFileGeneLs] ),
 #===============================================================================
 # enzymes -> pathways
 #===============================================================================
@@ -112,8 +138,8 @@ c_apProcessors				= [
 		[c_strFilePathwayC] ),
 	CProcessor( "01",	"02a",	"mpt",	c_strProgEnzymes2PathwaysMP,
 		[c_strFileMP, c_strFileKEGGC] ),
-	CProcessor( "11",	"02a",	"mpt",	c_strProgEnzymes2PathwaysMP,
-		[c_strFileMP, c_strFileMCPC] ),
+#	CProcessor( "11",	"02a",	"mpt",	c_strProgEnzymes2PathwaysMP,
+#		[c_strFileMP, c_strFileMCPC] ),
 	CProcessor( "01",	"02a",	"mpm",	c_strProgEnzymes2PathwaysMP,
 		[c_strFileMP, c_strFileModuleC] ),
 #===============================================================================
@@ -146,11 +172,13 @@ c_apProcessors				= [
 # Witten-Bell doesn't actually help more than naive smoothing
 #	CProcessor( "02b",	"03a",	"nve",	c_strProgSmooth,
 #		[c_strFilePathwayC] ),
-# No smoothing at all is terrible
+# No smoothing at all seems to work better with the new KEGG modules
 	CProcessor( "12b",	"13a",	"nul",	c_strProgCat,
 		[] ),
 	CProcessor( "02b",	"03a",	"wbl",	c_strProgSmoothWB,
 		[c_strFilePathwayC] ),
+	CProcessor( "02b",	"03a",	"nul",	c_strProgCat,
+		[] ),
 #===============================================================================
 # gap filling
 #===============================================================================
@@ -196,9 +224,19 @@ c_apProcessors				= [
 	CProcessor( "13c",	"04b",	"nul",	c_strProgPathAb,
 		[c_strFilePathwayC],					["\"\"", "0"] ),
 ]
+
+#===============================================================================
+# A chain of piped finalizers runs on each file produced by the processing
+# pipeline that is _not_ further processed; in other words, the coverage 04a and
+# abundance 04b files.  Each finalizer consists of up to three parts:
+#   An optional regular expression that must match filenames on which it is run
+#   The processing script
+#   A list of zero or more files provided on the command line to the processing script
+#===============================================================================
 c_aastrFinalizers			= [
 	[None,			c_strProgZero],
 	[None,			c_strProgFilter, 	[c_strFilePathwayC]],
+	[None,			c_strProgExclude,	[c_strInputExclude]],
 	["0(1|(4b))",	c_strProgNormalize],
 	[None,			c_strProgMetadata,	[c_strInputMetadata]],
 ]

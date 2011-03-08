@@ -7,38 +7,61 @@ class CPathway:
 	class CToken:
 		
 		def __init__( self, strToken ):
-			
+		
 			self.m_setGenes = set()
 			self.m_aastrGenes = []
+			self.m_aafOptional = []
 			for strOne in strToken.split( "|" ):
 				astrGenes = filter( lambda s: s, strOne.split( "+" ) )
 				if astrGenes:
+					afOptional = [False] * len( astrGenes )
+					for i in range( len( astrGenes ) ):
+						if astrGenes[i][0] == "~":
+							afOptional[i] = True
+							astrGenes[i] = astrGenes[i][1:]
+					self.m_aafOptional.append( afOptional )
 					self.m_setGenes |= set(astrGenes)
 					self.m_aastrGenes.append( astrGenes )
 				
 		def genes( self ):
 			
 			return self.m_setGenes
-		
-		def coverage( self, hashGenes ):
+
+		def _ac( self, hashGenes, fAbundance ):
 
 			dRet = 0			
 			for astrGenes in self.m_aastrGenes:
-				iCur = reduce( lambda i, s: i + ( 1 if hashGenes.get( s ) else 0 ), astrGenes, 0 )
-				dRet = max( float(iCur) / len( astrGenes ), dRet )
+				dCur = 0
+				for strGene in astrGenes:
+					d = hashGenes.get( strGene, 0 )
+					dCur += d if fAbundance else ( 1 if d else 0 )
+				dRet = max( float(dCur) / len( astrGenes ), dRet )
 			return dRet
+		
+		def coverage( self, hashGenes ):
+
+			return self._ac( hashGenes, False )
 		
 		def abundance( self, hashGenes ):
 
-			dRet = 0
-			for astrGenes in self.m_aastrGenes:
-				dCur = reduce( lambda i, s: i + hashGenes.get( s, 0 ), astrGenes, 0 )
-				dRet = max( dCur / len( astrGenes ), dRet )
-			return dRet
+			return self._ac( hashGenes, True )
 		
 		def size( self ):
 
 			return ( float(sum( map( lambda a: len( a ), self.m_aastrGenes ) )) / len( self.m_aastrGenes ) )
+		
+		def isoptional( self ):
+			
+			for afOptional in self.m_aafOptional:
+				for fOptional in afOptional:
+					if not fOptional:
+						return False
+			return True
+		
+		def __repr__( self ):
+			
+			return "|".join( ("+".join( ( ( "~" if af[i] else "" ) + astr[i] ) for i in range( len( astr ) ) )
+				for astr, af in zip( self.m_aastrGenes, self.m_aafOptional )) )
 
 	def __init__( self, astrTokens ):
 		
@@ -63,19 +86,31 @@ class CPathway:
 		
 		return self.m_setGenes
 	
-	def coverage( self, hashGenes ):
-		
+	def _mean( self, ad ):
+
+		return ( reduce( lambda dProd, d: dProd * d, ad, 1 ) ** ( 1.0 / len( ad ) ) )
+	
+	def _ac( self, hashGenes, fAbundance ):
+
 		if not self.m_setTokens:
 			return 0
-		dRet = reduce( lambda d, p: d + p.coverage( hashGenes ), self.m_setTokens, 0 )
-		return ( dRet / len( self.m_setTokens ) )
+		apReq = []
+		apOpt = []
+		for pToken in self.m_setTokens:
+			( apOpt if pToken.isoptional( ) else apReq ).append( pToken )
+		adReq, adOpt = ([( p.abundance if fAbundance else p.coverage )( hashGenes ) for p in a] for a in (apReq, apOpt))
+		dReq = self._mean( adReq )
+		if adOpt:
+			dReq = self._mean( adReq + filter( lambda d: d > dReq, adOpt ) )
+		return dReq
+	
+	def coverage( self, hashGenes ):
+		
+		return self._ac( hashGenes, False )
 	
 	def abundance( self, hashGenes ):
 		
-		if not self.m_setTokens:
-			return 0
-		dRet = reduce( lambda d, p: d + p.abundance( hashGenes ), self.m_setTokens, 0 )
-		return ( dRet / len( self.m_setTokens ) )
+		return ( self._ac( hashGenes, True ) * self.coverage( hashGenes ) )
 
 def open( fileIn ):
 

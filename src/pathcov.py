@@ -51,8 +51,7 @@ for strKEGG, hashKOs in hashScores.items( ):
 	if pPathway:
 		hashCov = {}
 		for strKO, dAb in hashKOs.items( ):
-# Average works better than median since this is fairly lenient
-			if dAb > dAve:
+			if dAb > dMed:
 				hashCov[strKO] = dAb
 		dCov = pPathway.coverage( hashCov )
 	else:

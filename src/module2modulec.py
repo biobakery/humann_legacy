@@ -12,32 +12,34 @@ if len( sys.argv ) > 1:
 astrEntry = fDefinition = None
 for strLine in sys.stdin:
 	if not fDefinition:
-		mtch = re.search( '^ENTRY\s+(M\d+)', strLine )
+		mtch = re.search( r'^ENTRY\s+(M\d+)', strLine )
 		if mtch:
 			astrEntry = [mtch.group( 1 )]
 			continue
-		mtch = re.search( '^NAME\s+(.+)$', strLine )
+		mtch = re.search( r'^NAME\s+(.+)$', strLine )
 		if mtch:
 #			astrEntry[0] += ":" + mtch.group( 1 ).replace( " ", "_" )
 			continue
 		if strLine.find( "DEFINITION" ) == 0:
 			fDefinition = True
 	if fDefinition:
-		mtch = re.search( '^(?:DEFINITION)?\s+(.+)$', strLine )
+		mtch = re.search( r'^(?:DEFINITION)?\s+(.+)$', strLine )
 		if not mtch:
 			i = 2
 			while i < len( astrEntry ):
-				if re.search( '\W$', astrEntry[i - 1] ):
+				if re.search( r'\W$', astrEntry[i - 1] ):
 					astrEntry[i - 1] += astrEntry[i]
 					del astrEntry[i]
 				else:
 					i += 1
-			print( "\t".join( astrEntry ) )
+			print( "\t".join( filter( lambda s: s, astrEntry ) ) )
 			fDefinition = False
 			continue
 		for strToken in mtch.group( 1 ).split( " " ):
-			strToken = re.sub( '[()]', "", strToken.strip( ).replace( "-", "+" ) )
+			strToken = re.sub( r'[()]', "", strToken.strip( ) )
+			if strToken == "--":
+				continue
 			if fPathways:
-				astrEntry.append( strToken.replace( ",", "|" ) )
+				astrEntry.append( strToken.replace( ",", "|" ).replace( "-", "+~" ) )
 			else:
-				astrEntry += filter( lambda s: s, re.split( '[,+]', strToken ) )
+				astrEntry += filter( lambda s: s, re.split( r'[,+-]', strToken ) )
