@@ -27,9 +27,12 @@ iT = len( hashhashHits )
 dN = 0
 for strKO, hashKO in hashhashHits.items( ):
 	dN += sum( hashKO.values( ) ) / len( hashKO )
-dN /= dN + iT
+d = dN + iT
+if d:
+	dN /= d
 
-dZero = dN * float(iT) / ( len( setKOs ) - iT )
+iDen = len( setKOs ) - iT
+dZero = ( dN * float(iT) / ( len( setKOs ) - iT ) ) if iDen else 0
 setHits = set()
 for strKO, hashKO in hashhashHits.items( ):
 	for strKEGG, dScore in hashKO.items( ):

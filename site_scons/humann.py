@@ -84,7 +84,6 @@ c_strFileMapKEGGTXT			= data( "map_kegg.txt" )
 c_strFileMapKEGGTAB			= data( "map_title.tab" )
 c_strFileKO					= data( "ko" )
 c_strFileGenesPEP			= data( "genes.pep" )
-c_strFileMetaCyc			= data( "meta.tar.gz" )
 c_strFileMetaCycGenes		= data( "reactions.dat" )
 c_strFileMetaCycPaths		= data( "pathways.dat" )
 c_strFileKOC				= data( "koc" )
@@ -270,30 +269,26 @@ def main( hashVars ):
 # MetaCyc
 #===============================================================================
 	
-	def funcFileMetaCyc( target, source, env ):
-		strT, astrSs = ts( target, source )
-		return download( "http://brg.ai.sri.com/ecocyc/dist/flatfiles-52983746/" +
-			os.path.basename( strT ), strT )
-	pE.Command( c_strFileMetaCyc, None, funcFileMetaCyc )
-	ret( pE, c_strFileMetaCyc )
-	def funcFileMetaCycFile( target, source, env ):
-		strT, astrSs = ts( target, source )
-		strOut, strIn = os.path.basename( strT ), astrSs[0]
-		strPath = "14.6/data/"
-		return ( ex( " ".join( ("tar", "-C", c_strDirData, "-mxzf", strIn, strPath + strOut) ) ) or
-			ex( "mv " + c_strDirData + "/" + strPath + strOut + " " + strT ) )
-	for strFile in (c_strFileMetaCycGenes, c_strFileMetaCycPaths):
-		pE.Command( strFile, [c_strFileMetaCyc], funcFileMetaCycFile )
-	
-	for astrMC in ([c_strFileMCC, c_strFileMetaCycGenes, c_strProgMetaCyc2MCC],
-		[c_strFileMCPC, c_strFileMetaCycPaths, c_strProgMetaCyc2MCPC]):
-		strOut, strIn, strProg = astrMC
-		pE.Command( strOut, [strIn, strProg], rn )
+	if c_strInputMetaCyc:
+		def funcFileMetaCycFile( target, source, env ):
+			strT, astrSs = ts( target, source )
+			strOut, strIn = os.path.basename( strT ), astrSs[0]
+			strPath = c_strVersionMetaCyc + "/data/"
+			return ( ex( " ".join( ("tar", "-C", c_strDirData, "-mxzf", strIn, strPath + strOut) ) ) or
+				ex( "mv " + c_strDirData + "/" + strPath + strOut + " " + strT ) )
+		for strFile in (c_strFileMetaCycGenes, c_strFileMetaCycPaths):
+			pE.Command( strFile, c_strInputMetaCyc, funcFileMetaCycFile )
+		
+		for astrMC in ([c_strFileMCC, c_strFileMetaCycGenes, c_strProgMetaCyc2MCC],
+			[c_strFileMCPC, c_strFileMetaCycPaths, c_strProgMetaCyc2MCPC]):
+			strOut, strIn, strProg = astrMC
+			pE.Command( strOut, [strIn, strProg], rn )
 	
 	def funcPathways( target, source, env ):
 		strT, astrSs = ts( target, source )
 		return ex( out( " ".join( ["cat"] + astrSs ), strT ) )
-	pE.Command( c_strFilePathwayC, [c_strFileKEGGC, c_strFileMCPC, c_strFileModuleC], funcPathways )
+	pE.Command( c_strFilePathwayC, [c_strFileKEGGC, c_strFileModuleC] +
+		( [c_strFileMCPC] if c_strInputMetaCyc else [] ), funcPathways )
 
 #===============================================================================
 # MinPath
@@ -346,9 +341,9 @@ def main( hashVars ):
 			hashTo.setdefault( pMatch.group( 1 ), [] ).append( strTo )
 
 	hashPerf = {}
-	for fileSynth in \
+	for fileSynth in ( [] if ( not c_fMocks ) else \
 		Glob( "/".join( (c_strDirSynth, c_strDirOutput, c_strMock + "_*_0[0-9]*" + c_strSuffixOutput) ) ) + \
-		Glob( "/".join( (c_strDirSynth, c_strDirCyc, "*" + c_strMock + "_*_0[0-9]*" + c_strSuffixOutput) ) ):
+		Glob( "/".join( (c_strDirSynth, c_strDirCyc, "*" + c_strMock + "_*_0[0-9]*" + c_strSuffixOutput) ) ) ):
 		pMatch = re.search( '(?:([^/]+)_)?(' + c_strMock + '.*)_(\d{2}[^-.]*)', str(fileSynth) )
 		if not pMatch:
 			continue

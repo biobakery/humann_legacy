@@ -13,7 +13,7 @@ HUMAnN is a pipeline for efficiently and accurately determining the presence/abs
 HUMAnN can thus be used in tandem with any translated BLAST program to convert sequence reads into coverage and abundance tables summarizing the gene families and pathways in a microbial community.  This lets you analyze a collection of metagenomes as a matrix of gene/pathway abundances, just like you might analyze a collection of microarrays.
 
 If you use this software, please cite our paper:
-"Scalable metabolic pathway reconstruction from metagenomic data"
+"Scalable pathway reconstruction from metagenomic data"
 ***Citation here***
 
 Many thanks to the NIH and to the entire Human Microbiome Project team for making the HMP possible and for the many collaborators who helped to make HUMAnN a reality.  Sahar Abubucker and Makedonka Mitreva (Washington University) co-led the Metabolic Reconstruction group, the pipeline incorporates software from Yuzhen Ye (Indiana University), Beltran Rodriguez-Mueller (SDSU), and Pat Schloss (University of Michigan), and specific contributors include Alyx Schubert (University of Michigan), Jeremy Zucker (Broad Institute), Brandi Cantarel (UMD), Qiandong Zeng (Broad Institute), and many others.
@@ -78,7 +78,11 @@ INPUTS
 
 One or more tabular translated BLAST (blastx) output files matching sequence read IDs to gene IDs.  Place (or symlink) each file with a .txt, .txt.gz, or .txt.bz extension in the "input" directory before running HUMAnN.  The pipeline includes processors for three tab-delimited text formats by default (below) and can easily by modified to accept more.
 
-Please modify the SConstruct file as needed to specify the exact format of your input data.
+As an example, the default inputs provided with HUMAnN were generated using:
+  blastx -outfmt 6 -db 28_kegg_genomes < mock_even_lc.fasta.gz | gzip -c > mock_even_lc.txt.gz
+Where "28_kegg_genomes" is a database of the amino acid sequences of 28 well-characterized KEGG organisms' ORFs (.pep files from ban, bbr, bqu, bsu, cbo, cdf, cje, eco, efa, ftu, hin, hpy, hsl, lmo, mbo, mtu, ngo, nme, pae, rso, sau, sco, sgo, spn, vch, xfa, yen, and yps).
+
+Please modify the SConstruct file as needed to specify the exact format of your input data:
 
 blastx -outfmt 6
 ----
