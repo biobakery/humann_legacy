@@ -3,13 +3,15 @@
 import pathway
 import sys
 
+c_fCoverage	= True
 c_fMedup	= True
 
 if len( sys.argv ) < 2:
-	raise Exception( "Usage: pathab.py <keggc> [modulep] [medup=" + str(c_fMedup) + "] < <pathways.txt>" )
+	raise Exception( "Usage: pathab.py <keggc> [modulep] [medup=" + str(c_fMedup) + "] [coverage=" + str(c_fCoverage) + "] < <pathways.txt>" )
 strKEGGC = sys.argv[1]
 strModuleP = None if ( len( sys.argv ) <= 2 ) else sys.argv[2]
 fMedup = c_fMedup if ( len( sys.argv ) <= 3 ) else ( int(sys.argv[3]) != 0 )
+fCoverage = c_fCoverage if ( len( sys.argv ) <= 4 ) else ( int(sys.argv[4]) != 0 )
 
 hashKEGGs = {}
 for strLine in open( strKEGGC ):
@@ -49,7 +51,7 @@ for strKEGG, hashKOs in hashScores.items( ):
 #	sys.stderr.write( "%s\n" % "\t".join( str(d) for d in ( [strKEGG] + adAbs ) ) )
 	pPathway = hashModules.get( strKEGG )
 	if pPathway:
-		dAb = pPathway.abundance( hashKOs )
+		dAb = pPathway.abundance( hashKOs, fCoverage )
 #		dAb = max( 0, sum( adAbs ) / len( adAbs ) - d50 )
 	else:
 		if fMedup:

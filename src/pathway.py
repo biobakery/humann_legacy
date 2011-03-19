@@ -108,9 +108,9 @@ class CPathway:
 		
 		return self._ac( hashGenes, False )
 	
-	def abundance( self, hashGenes ):
+	def abundance( self, hashGenes, fCoverage = True ):
 		
-		return ( self._ac( hashGenes, True ) * self.coverage( hashGenes ) )
+		return ( self._ac( hashGenes, True ) * ( self.coverage( hashGenes ) if fCoverage else 1 ) )
 
 def open( fileIn ):
 

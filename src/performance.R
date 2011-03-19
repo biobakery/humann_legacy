@@ -247,7 +247,8 @@ funcScatter <- function( lsData, strTarget ) {
 		dMax <- 0 }
 	adLim <- c(0.99 * dMin, 1.01 * dMax)
 	plot( adX, adGSAbd, xlim = adLim, ylim = adLim, xlab = sprintf( "Predicted (r = %0.4f)",
-		funcAcc( adX, adGSAbd ) ), ylab = "Actual", main = "Abundance", pch = "o" )
+		funcAcc( adX, adGSAbd ) ), ylab = "Actual", pch = "o",
+		main = sprintf( "Abundance (%s)", strTarget ) )
 	if( length( adX ) ) {
 		lmod <- lm( adGSAbd ~ adX )
 		abline( reg = lmod )
