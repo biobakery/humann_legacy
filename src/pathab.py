@@ -40,19 +40,15 @@ if len( adScores ) > 2:
 else:
 	d25, d50, d75 = [adScores[0] if adScores else 0] * 3
 print( "PID	Abundance" )
-#sys.stderr.write( "%s\n" % "\t".join( ["PID", "Abundance"] + ( ["X"] * max( map( lambda a: len( a ), hashKEGGs.values( ) ) ) ) ) )
 for strKEGG, hashKOs in hashScores.items( ):
 	if len( strKEGG ) == 0:
 		continue
 	for strKO in hashKEGGs.get( strKEGG, [] ):
 		hashKOs.setdefault( strKO, 0 )
 	adAbs = sorted( hashKOs.values( ) )
-#	dAb = adAbs[len( adAbs ) / 2] if fMedian else ( sum( adAbs ) / len( adAbs ) )
-#	sys.stderr.write( "%s\n" % "\t".join( str(d) for d in ( [strKEGG] + adAbs ) ) )
 	pPathway = hashModules.get( strKEGG )
 	if pPathway:
-		dAb = pPathway.abundance( hashKOs, fCoverage )
-#		dAb = max( 0, sum( adAbs ) / len( adAbs ) - d50 )
+		dAb = pPathway.abundance( hashKOs, d50 if fCoverage else None )
 	else:
 		if fMedup:
 			adAbs = adAbs[( len( adAbs ) / 2 ):]

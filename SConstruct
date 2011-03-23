@@ -173,10 +173,10 @@ c_apProcessors				= [
 #	CProcessor( "02b",	"03a",	"nve",	c_strProgSmooth,
 #		[c_strFilePathwayC] ),
 # No smoothing at all seems to work better with the new KEGG modules
+#	CProcessor( "02b",	"03a",	"wbl",	c_strProgSmoothWB,
+#		[c_strFilePathwayC] ),
 	CProcessor( "12b",	"13a",	"nul",	c_strProgCat,
 		[] ),
-	CProcessor( "02b",	"03a",	"wbl",	c_strProgSmoothWB,
-		[c_strFilePathwayC] ),
 	CProcessor( "02b",	"03a",	"nul",	c_strProgCat,
 		[] ),
 #===============================================================================

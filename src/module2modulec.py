@@ -22,24 +22,17 @@ for strLine in sys.stdin:
 			continue
 		if strLine.find( "DEFINITION" ) == 0:
 			fDefinition = True
-	if fDefinition:
+	if astrEntry and fDefinition:
 		mtch = re.search( r'^(?:DEFINITION)?\s+(.+)$', strLine )
 		if not mtch:
-			i = 2
-			while i < len( astrEntry ):
-				if re.search( r'\W$', astrEntry[i - 1] ):
-					astrEntry[i - 1] += astrEntry[i]
-					del astrEntry[i]
-				else:
-					i += 1
 			print( "\t".join( filter( lambda s: s, astrEntry ) ) )
-			fDefinition = False
+			fDefinition = astrEntry = None
 			continue
 		for strToken in mtch.group( 1 ).split( " " ):
-			strToken = re.sub( r'[()]', "", strToken.strip( ) )
+			strToken = strToken.strip( )
 			if strToken == "--":
 				continue
 			if fPathways:
-				astrEntry.append( strToken.replace( ",", "|" ).replace( "-", "+~" ) )
+				astrEntry.append( strToken )
 			else:
-				astrEntry += filter( lambda s: s, re.split( r'[,+-]', strToken ) )
+				astrEntry += filter( lambda s: s, re.split( r'[,+-]', re.sub( r'[()]', "", strToken ) ) )
