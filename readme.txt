@@ -13,17 +13,17 @@ HUMAnN is a pipeline for efficiently and accurately determining the presence/abs
 HUMAnN can thus be used in tandem with any translated BLAST program to convert sequence reads into coverage and abundance tables summarizing the gene families and pathways in a microbial community.  This lets you analyze a collection of metagenomes as a matrix of gene/pathway abundances, just like you might analyze a collection of microarrays.
 
 If you use this software, please cite our paper:
-"Scalable pathway reconstruction from metagenomic data"
+"Metabolic reconstruction of microbial communities from metagenomic data"
 ***Citation here***
 
-Many thanks to the NIH and to the entire Human Microbiome Project team for making the HMP possible and for the many collaborators who helped to make HUMAnN a reality.  Sahar Abubucker and Makedonka Mitreva (Washington University) co-led the Metabolic Reconstruction group, the pipeline incorporates software from Yuzhen Ye (Indiana University), Beltran Rodriguez-Mueller (SDSU), and Pat Schloss (University of Michigan), and specific contributors include Alyx Schubert (University of Michigan), Jeremy Zucker (Broad Institute), Brandi Cantarel (UMD), Qiandong Zeng (Broad Institute), and many others.
+Many thanks to the NIH and to the entire Human Microbiome Project team for making the HMP possible and for the many collaborators who helped to make HUMAnN a reality.  Sahar Abubucker and Makedonka Mitreva (Washington University) co-led the Metabolic Reconstruction group, the pipeline incorporates software from Yuzhen Ye (Indiana University), Beltran Rodriguez-Mueller (SDSU), and Pat Schloss (University of Michigan), and specific contributors include Alyx Schubert (University of Michigan), Jeremy Zucker (Broad Institute), Brandi Cantarel (UMD), Qiandong Zeng (Broad Institute), Johannes Goll (JCVI), and many others.
 
 BASIC OPERATION
 ====
 
 HUMAnN uses the scons build system to drive its scientific workflow (see PREREQUISITES).  scons works very much like make, converting a set of inputs into a set of outputs one step at a time, and running only the steps necessary to produce the desired output.  Thus, to analyze your own data:
 
-* Place one or more translated BLAST results in the "input" directory (optionally gzipped or bzipped).
+* Place one or more translated BLAST results using KO identifiers in the "input" directory (optionally gzipped or bzipped).
 
 * Edit the "SConstruct" file; in particular, make sure that the input processors include one configured for your BLAST file name(s) and format(s).
 
@@ -45,8 +45,9 @@ Processing one Illumina lane of metagenomic reads can take as much as ~8-10GB of
 * scons
 http://www.scons.org
 
-* Python >= 2.6
+* Python >= 2.7
 http://www.python.org
+As of this writing, we use exactly one feature unique to Python 2.7, math.gamma.  If you're willing to edit it out, the dependency is to Python 2.6 for various modules and syntax.
 
 * blastx
 http://www.ncbi.nlm.nih.gov/blast/
@@ -271,3 +272,8 @@ v0.91, 02-02-11
 ----
 * Refinement of documentation and KEGG/MetaCyc version updates
 * Addition of METAREP output module
+
+v0.92, 03-23-11
+----
+* Addition of full (albeit crummy) CFG parser for KEGG modules
+* Improvement to module FPs using X2 for enzyme presence/absence calls

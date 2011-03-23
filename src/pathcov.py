@@ -49,11 +49,7 @@ for strKEGG, hashKOs in hashScores.items( ):
 		continue
 	pPathway = hashModules.get( strKEGG )
 	if pPathway:
-		hashCov = {}
-		for strKO, dAb in hashKOs.items( ):
-			if dAb > dMed:
-				hashCov[strKO] = dAb
-		dCov = pPathway.coverage( hashCov )
+		dCov = pPathway.coverage( hashKOs, dMed )
 	else:
 		iHits = 0
 		for strKO, dAb in hashKOs.items( ):

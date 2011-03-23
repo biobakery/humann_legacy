@@ -3,13 +3,15 @@
 import pathway
 import sys
 
+c_fCoverage	= True
 c_fMedup	= True
 
 if len( sys.argv ) < 2:
-	raise Exception( "Usage: pathab.py <keggc> [modulep] [medup=" + str(c_fMedup) + "] < <pathways.txt>" )
+	raise Exception( "Usage: pathab.py <keggc> [modulep] [medup=" + str(c_fMedup) + "] [coverage=" + str(c_fCoverage) + "] < <pathways.txt>" )
 strKEGGC = sys.argv[1]
 strModuleP = None if ( len( sys.argv ) <= 2 ) else sys.argv[2]
 fMedup = c_fMedup if ( len( sys.argv ) <= 3 ) else ( int(sys.argv[3]) != 0 )
+fCoverage = c_fCoverage if ( len( sys.argv ) <= 4 ) else ( int(sys.argv[4]) != 0 )
 
 hashKEGGs = {}
 for strLine in open( strKEGGC ):
@@ -38,19 +40,15 @@ if len( adScores ) > 2:
 else:
 	d25, d50, d75 = [adScores[0] if adScores else 0] * 3
 print( "PID	Abundance" )
-#sys.stderr.write( "%s\n" % "\t".join( ["PID", "Abundance"] + ( ["X"] * max( map( lambda a: len( a ), hashKEGGs.values( ) ) ) ) ) )
 for strKEGG, hashKOs in hashScores.items( ):
 	if len( strKEGG ) == 0:
 		continue
 	for strKO in hashKEGGs.get( strKEGG, [] ):
 		hashKOs.setdefault( strKO, 0 )
 	adAbs = sorted( hashKOs.values( ) )
-#	dAb = adAbs[len( adAbs ) / 2] if fMedian else ( sum( adAbs ) / len( adAbs ) )
-#	sys.stderr.write( "%s\n" % "\t".join( str(d) for d in ( [strKEGG] + adAbs ) ) )
 	pPathway = hashModules.get( strKEGG )
 	if pPathway:
-		dAb = pPathway.abundance( hashKOs )
-#		dAb = max( 0, sum( adAbs ) / len( adAbs ) - d50 )
+		dAb = pPathway.abundance( hashKOs, d50 if fCoverage else None )
 	else:
 		if fMedup:
 			adAbs = adAbs[( len( adAbs ) / 2 ):]
