@@ -133,6 +133,7 @@ c_strProgName				= prog( "postprocess_names.py" )
 c_strProgZero				= prog( "zero.py" )
 c_strProgFilter				= prog( "filter.py" )
 c_strProgNormalize			= prog( "normalize.py" )
+c_strProgEco				= prog( "eco.py" )
 c_strProgMetadata			= prog( "metadata.py" )
 #===============================================================================
 # Preprocessing scripts

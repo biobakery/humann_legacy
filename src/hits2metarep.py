@@ -9,12 +9,12 @@ def median( ad ):
 	
 	return ad[int(len( ad ) / 2)]
 
-pHits = hits.CHits( )
-pHits.open( sys.stdin )
-
 strGeneLs = None if ( len( sys.argv ) <= 1 ) else sys.argv[1]
 if strGeneLs in ("-h", "-help", "--help"):
 	raise Exception( "Usage: hits2metarep.py [genels] < <hits.bin>" )
+
+pHits = hits.CHits( )
+pHits.open( sys.stdin )
 
 hashGeneLs = {}
 if strGeneLs:
@@ -31,29 +31,25 @@ if strGeneLs:
 	for i in range( len( astrGenes ) ):
 		hashGeneLs[astrGenes[i]] = aiGenes[i] / dAve
 
-pAbundances = array.array( "f" )
-pEs = array.array( "f" )
-pIDs = array.array( "f" )
-pCovs = array.array( "f" )
-hashGenes = {}
+pAbundances = array.array( "f", (0 for i in range( pHits.get_tos( ) )) )
+apScores = []
+for i in range( pHits.get_tos( ) ):
+	apScores.append( array.array( "L" ) )
 for iFrom in range( pHits.get_froms( ) ):
-	strFrom = pHits.get_from( iFrom )
 	aiScores = pHits.get_scores( iFrom )
-	aiScores = filter( lambda i: pHits.get_to( pHits.get_scoreto( i ) ).find( ":" ) >= 0, aiScores )
-	astrTos = [pHits.get_to( pHits.get_scoreto( i ) ) for i in aiScores]
+	aiTos = [pHits.get_scoreto( i ) for i in aiScores]
+	aiIndices = filter( lambda i: pHits.get_to( aiTos[i] ).find( ":" ) >= 0, range( len( aiTos ) ) )
+	aiScores, aiTos = ([a[i] for i in aiIndices] for a in (aiScores, aiTos))
 	aadScores = [pHits.get_dic( i ) for i in aiScores]
 	dSum = sum( math.exp( -a[0] ) for a in aadScores )
-	for i in range( len( astrTos ) ):
-		strTo, adCur = (a[i] for a in (astrTos, aadScores))
-		dScore = math.exp( -adCur[0] ) / hashGeneLs.get( strTo, 1 )
-		iTo = len( pAbundances )
-		hashGenes.setdefault( strTo, [] ).append( iTo )
-		pAbundances.append( dScore / dSum )
-		pEs.append( adCur[0] )
-		pIDs.append( adCur[1] )
-		pCovs.append( adCur[2] )
+	for i in range( len( aiScores ) ):
+		iTo, adCur = (a[i] for a in (aiTos, aadScores))
+		dScore = math.exp( -adCur[0] ) / hashGeneLs.get( pHits.get_to( iTo ), 1 )
+		pAbundances[iTo] += dScore / dSum
+		apScores[iTo].append( aiScores[i] )
 
-for strGene, aiTos in hashGenes.items( ):
-	adScores = [median( sorted( p[i] for i in aiTos ) ) for p in (pEs, pIDs, pCovs)]
-	print( "\t".join( [strGene] + [( "%g" % d ) for d in
-		( [sum( pAbundances[i] for i in aiTos )] + adScores )] ) )
+for iTo in range( len( pAbundances ) ):
+	aadScores = [pHits.get_dic( i ) for i in apScores[iTo]]
+	adScores = [median( sorted( aadScores[i][j] for i in range( len( aadScores ) ) ) ) for j in range( len( aadScores[0] ) )]
+	print( "\t".join( [pHits.get_to( iTo )] + [( "%g" % d ) for d in ( [pAbundances[iTo]] +
+		adScores )] ) )

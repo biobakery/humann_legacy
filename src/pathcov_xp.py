@@ -3,7 +3,7 @@
 import subprocess
 import sys
 
-c_dPerc			= 0.25
+c_dPerc			= 0.1
 c_dProb			= 0.9
 
 if len( sys.argv ) < 2:
