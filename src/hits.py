@@ -17,7 +17,7 @@ class CHits:
 		self.m_astrTos = []
 		self.m_astrFroms = []
 		self.m_apScores = []
-		self.m_pTos = array.array( "I" )
+		self.m_pTos = array.array( "L" )
 		self.m_pEs = array.array( "f" )
 		self.m_pIDs = array.array( "f" )
 		self.m_pCovs = array.array( "f" )
@@ -33,7 +33,16 @@ class CHits:
 			
 		return iID
 
+	def _repopulate( self, astrIDs, hashIDs ):
+		
+		for i in range( len( astrIDs ) ):
+			hashIDs[astrIDs[i]] = i
+
 	def add( self, strTo, strFrom, dE, dID, dCov ):
+		
+		for astrCur, hashCur in ((self.m_astrTos, self.m_hashTos), (self.m_astrFroms, self.m_hashFroms)):
+			if astrCur and ( not hashCur ):
+				self._repopulate( astr, hash )
 
 		iTo = self._enhash( strTo, self.m_hashTos, self.m_astrTos )
 		iFrom = self._enhash( strFrom, self.m_hashFroms, self.m_astrFroms, self.m_apScores )
@@ -55,6 +64,10 @@ class CHits:
 	def get_to( self, iTo ):
 
 		return self.m_astrTos[iTo]
+	
+	def get_tos( self ):
+
+		return len( self.m_astrTos )
 
 	def get_scoreto( self, iScore ):
 
@@ -88,9 +101,6 @@ class CHits:
 		self.m_pEs = pickle.load( fileIn )
 		self.m_pIDs = pickle.load( fileIn )
 		self.m_pCovs = pickle.load( fileIn )
-		for astrCur, hashCur in ((self.m_astrFroms, self.m_hashFroms), (self.m_astrTos, self.m_hashTos)):
-			for i in range( len( astrCur ) ):
-				hashCur[astrCur[i]] = i
 
 if __name__ == "__main__":
 	pHits = CHits( )
@@ -98,9 +108,3 @@ if __name__ == "__main__":
 #	pHits.save( sys.stdout )
 	for i in pHits.m_pTos:
 		print( i )
-	sys.exit( 0 )
-	for iFrom in range( pHits.get_froms( ) ):
-		print( pHits.get_from( iFrom ) )
-		for iScore in pHits.get_scores( iFrom ):
-			iTo = pHits.get_scoreto( iScore )
-			print( "\t".join( [pHits.get_to( iTo )] + [( "%g" % d ) for d in pHits.get_dic( iScore )] ) )

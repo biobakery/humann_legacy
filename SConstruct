@@ -128,6 +128,10 @@ c_apProcessors				= [
 		[c_strFileKOC, c_strFileGeneLs] ),
 #	CProcessor( "00",	"11",	"mtc",	c_strProgHits2Metacyc,
 #		[c_strFileMCC] ),
+#===============================================================================
+# hits -> metarep
+#===============================================================================
+# Generate a METAREP input file from BLAST hits
 #	CProcessor( "00",	"99",	"mtr",	c_strProgHits2Metarep,
 #		[c_strFileGeneLs] ),
 #===============================================================================
@@ -238,6 +242,7 @@ c_aastrFinalizers			= [
 	[None,			c_strProgFilter, 	[c_strFilePathwayC]],
 	[None,			c_strProgExclude,	[c_strInputExclude]],
 	["0(1|(4b))",	c_strProgNormalize],
+	[None,			c_strProgEco],
 	[None,			c_strProgMetadata,	[c_strInputMetadata]],
 ]
 

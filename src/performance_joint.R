@@ -169,7 +169,7 @@ funcScatter <- function( lsData, astrNames, astrTargets ) {
 		if( length( adX ) ) {
 			lmod <- lm( adGSAbd ~ adX )
 			abline( reg = lmod )
-			dX <- 0.67 * dMax
+			dX <- 0.6 * dMax
 			dY <- predict( lmod, data.frame( adX = dX ) )
 			dR <- sprintf( "%0.4f", funcAcc( adX, adGSAbd ) )
 			text( dX, dY, bquote( rho == .(dR) ), pos = 4, offset = 0.67 ) } }
@@ -196,14 +196,14 @@ c_strRE			<- '^M[0-9]+$' # '^ko[0-9]+$'
 c_strOutput		<- paste( strType, ".pdf", sep = "" )
 c_strCoverage	<- paste( "output/", strType, "_04a.txt", sep = "" )
 c_strAbundance	<- paste( "output/", strType, "_04b.txt", sep = "" )
-c_astrNames		<- c("HUMAnN", "Naive")
+c_astrNames		<- c("HUMAnN", "best-BLAST-hit")
 
 lsData <- funcData( c_strCoverage, c_strAbundance )
 fPDF <- length( grep( "\\.pdf$", c_strOutput ) )
-#if( fPDF ) {
-#	pdf( c_strOutput, width = 2 * c_iWidth, height = c_iHeight )
-#} else {
-#	png( c_strOutput, units = "in", res = 160, width = 2 * c_iWidth, height = c_iHeight ) }
+if( fPDF ) {
+	pdf( c_strOutput, width = 2 * c_iWidth, height = c_iHeight )
+} else {
+	png( c_strOutput, units = "in", res = 160, width = 2 * c_iWidth, height = c_iHeight ) }
 par( mfrow = c(1, 2) )
 funcSAUC( lsData, c_astrNames, c_astrTargets )
-#dev.off( )
+dev.off( )

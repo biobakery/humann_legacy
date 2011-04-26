@@ -277,3 +277,10 @@ v0.92, 03-23-11
 ----
 * Addition of full (albeit crummy) CFG parser for KEGG modules
 * Improvement to module FPs using X2 for enzyme presence/absence calls
+
+v0.93, 04-26-11
+----
+* Add default calculation of basic ecology metrics: Shannon, Simpson, Pielou, and richness
+* Improve memory usage in METAREP output generation
+* Make default Xipe parameters slightly more lenient (retain a few more nonzero pathways)
+* Improve gold standard generation in synthetic datasets by retaining full KEGG pathway set
