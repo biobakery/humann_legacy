@@ -320,5 +320,6 @@ for strOrganisms in (f.get_abspath( ) for f in c_afileOrganisms):
 			funcAbdCov )
 		Default( strCov )
 		strAbd = strCov.replace( c_strCov, c_strAbd )
-		Command( strAbd, [c_strProgAbd, strOrganisms] + astrPathways, funcAbdCov )
+		Command( strAbd, [c_strProgAbd, strOrganisms, c_strInputPathwayC] + astrPathways,
+			funcAbdCov )
 		Default( strAbd )

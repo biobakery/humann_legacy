@@ -156,7 +156,7 @@ funcScatter <- function( lsData, astrNames, astrTargets ) {
 		if( iTarget == 1 ) {
 			if( length( adX ) ) {
 				dMin <- 0 # min( ad )
-				dMax <- max( frmeAbd, na.rm = TRUE ) # max( ad )
+				dMax <- max( ad )
 			} else {
 				adGSAbd <- c()
 				dMin <- 0
