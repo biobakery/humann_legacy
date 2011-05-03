@@ -284,3 +284,7 @@ v0.93, 04-26-11
 * Improve memory usage in METAREP output generation
 * Make default Xipe parameters slightly more lenient (retain a few more nonzero pathways)
 * Improve gold standard generation in synthetic datasets by retaining full KEGG pathway set
+
+v0.94, 05-03-11
+----
+* Fix a problem with non-pathway BRITE entities in synthetic gold standard

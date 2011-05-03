@@ -19,7 +19,7 @@ for strLine in sys.stdin:
 hashPathways = {}
 for strLine in open( strPathways ):
 	astrLine = strLine.strip( ).split( "\t" )
-	hashPathways[astrLine[0]] = False
+	hashPathways[astrLine[0]] = True
 
 for strPathways in astrPathways:
 	pMatch = re.search( '^(?:.*\/)?([a-z]{3}?)_\S+\.list$', strPathways )
@@ -37,12 +37,13 @@ for strPathways in astrPathways:
 		mtch = re.search( '^[a-z]{3}(\d+)$', strID )
 		if mtch:
 			strID = c_strKO + mtch.group( 1 )
-		hashPathways[strID] = True
+		if hashPathways.get( strID ):
+			hashPathways[strID] = False
 
 for strOrg, fOrg in hashOrgs.items( ):
 	if not fOrg:
 		sys.stderr.write( "Missing genome: %s\n" % strOrg )
 
 print( "PID	Coverage" )
-for strPathway, fPresent in hashPathways.items( ):
-	print( "\t".join( (strPathway, str(1 if fPresent else 0)) ) )
+for strPathway, fAbsent in hashPathways.items( ):
+	print( "\t".join( (strPathway, str(0 if fAbsent else 1)) ) )
