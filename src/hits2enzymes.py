@@ -44,7 +44,7 @@ for iFrom in range( pHits.get_froms( ) ):
 	aiScores = pHits.get_scores( iFrom )
 	aiScores = filter( lambda i: pHits.get_to( pHits.get_scoreto( i ) ).find( ":" ) >= 0, aiScores )
 	if iTopN > 0:
-		aiScores = sorted( aiScores, lambda iOne, iTwo: cmp( pHits.get_score( iOne ), pHits.get_score( iTwo ) ) )
+		aiScores = sorted( aiScores, lambda iOne, iTwo: cmp( pHits.get_dic( iOne )[0], pHits.get_dic( iTwo )[0] ) )
 		aiScores = aiScores[:iTopN]
 # Keep only hits that correspond to at least one KO
 	aiScores = filter( lambda i: hashCOK.get( pHits.get_to(

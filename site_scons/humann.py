@@ -132,9 +132,12 @@ c_strFileMP					= c_strDirMP + "/" + os.path.basename( c_strProgMP )
 c_strProgName				= prog( "postprocess_names.py" )
 c_strProgZero				= prog( "zero.py" )
 c_strProgFilter				= prog( "filter.py" )
+c_strProgExclude			= prog( "exclude.py" )
 c_strProgNormalize			= prog( "normalize.py" )
 c_strProgEco				= prog( "eco.py" )
 c_strProgMetadata			= prog( "metadata.py" )
+c_strProgUnhuman			= prog( "unhuman.py" )
+c_strProgUnhumanR			= prog( "unhuman.R" )
 #===============================================================================
 # Preprocessing scripts
 #===============================================================================
@@ -269,7 +272,7 @@ def main( hashVars ):
 #===============================================================================
 # MetaCyc
 #===============================================================================
-	
+
 	if c_strInputMetaCyc:
 		def funcFileMetaCycFile( target, source, env ):
 			strT, astrSs = ts( target, source )
@@ -279,7 +282,7 @@ def main( hashVars ):
 				ex( "mv " + c_strDirData + "/" + strPath + strOut + " " + strT ) )
 		for strFile in (c_strFileMetaCycGenes, c_strFileMetaCycPaths):
 			pE.Command( strFile, c_strInputMetaCyc, funcFileMetaCycFile )
-		
+	
 		for astrMC in ([c_strFileMCC, c_strFileMetaCycGenes, c_strProgMetaCyc2MCC],
 			[c_strFileMCPC, c_strFileMetaCycPaths, c_strProgMetaCyc2MCPC]):
 			strOut, strIn, strProg = astrMC
@@ -328,9 +331,10 @@ def main( hashVars ):
 					astrNew.append( strTo )
 					pE.Command( strTo, [strFrom] + pProc.deps( ), pProc.ex( ) )
 
-					mtch = re.search( '_(\d{2}[^-]*)', strTo )
+					mtch = re.search( '_(\d{2})([^-]*)', strTo )
 					if mtch:
-						hashTypes.setdefault( mtch.group( 1 ), set() ).add( strTo )
+						for strType in (mtch.group( 1 ), "".join( mtch.groups( ) )):
+							hashTypes.setdefault( strType, set() ).add( strTo )
 			if not fHit:
 				astrTo.append( strFrom )
 		astrFrom = astrNew

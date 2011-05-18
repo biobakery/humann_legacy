@@ -32,7 +32,7 @@ if d:
 	dN /= d
 
 iDen = len( setKOs ) - iT
-dZero = ( dN * float(iT) / ( len( setKOs ) - iT ) ) if iDen else 0
+dZero = ( float(iT) / iDen ) if iDen else 0
 setHits = set()
 for strKO, hashKO in hashhashHits.items( ):
 	for strKEGG, dScore in hashKO.items( ):
