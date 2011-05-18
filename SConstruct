@@ -18,6 +18,8 @@ def isexclude( strInput ):
 # By default, exclude nothing
 	return (
 		False
+# Example: exclude any file not in the synthetic community MBLASTX evaluation.
+#		( strInput.find( "mock_" ) < 0 ) or ( strInput.find( "vs_All" ) < 0 )
 # Example: exclude any file whose filename does not contain "example".
 #		( strInput.find( "example" ) < 0 )
 	)
@@ -36,6 +38,8 @@ c_strVersionMetaCyc			= "14.6"
 # Optional: Generate synthetic community performance descriptors
 # Note: Should build synthetic communities in the "synth" subdirectory if enabled
 c_fMocks					= True
+# Enable extensive parameter testing (greatly increases processing!)
+c_fParameterEval			= False
 
 # Filename into which all processing steps are logged for provenance tracking
 logging.basicConfig( filename = "provenance.txt", level = logging.INFO,
@@ -83,8 +87,8 @@ c_apProcessors				= [
 #		[],									["mblastx", "0.98"],		True,	True ),
 	CProcessor( "_mblastxv2.0.8.gz",	"00",	"htc",	c_strProgBlast2Hits,
 		[],									["mblastx", "0.9"],			True,	True ),
-	CProcessor( "_mblastxv2.0.8.gz",	"00",	"hit",	c_strProgBlast2Hits,
-		[],									["mblastx"],	True,	True ),
+#	CProcessor( "_mblastxv2.0.8.gz",	"00",	"hit",	c_strProgBlast2Hits,
+#		[],									["mblastx"],	True,	True ),
 #===============================================================================
 # mapx 5 samples
 #===============================================================================
@@ -126,6 +130,8 @@ c_apProcessors				= [
 #===============================================================================
 	CProcessor( "00",	"01",	"keg",	c_strProgHits2Enzymes,
 		[c_strFileKOC, c_strFileGeneLs] ),
+	CProcessor( "00",	"01n",	"nve",	c_strProgHits2Enzymes,
+		[c_strFileKOC, c_strFileGeneLs],	["1"] ),
 #	CProcessor( "00",	"11",	"mtc",	c_strProgHits2Metacyc,
 #		[c_strFileMCC] ),
 #===============================================================================
@@ -138,8 +144,12 @@ c_apProcessors				= [
 # enzymes -> pathways
 #===============================================================================
 # MinPath helps so much that we don't need to include naive pathway assignment
-	CProcessor( "01",	"12a",	"nve",	c_strProgEnzymes2Pathways,
+	CProcessor( "01n",	"02an",	"nve",	c_strProgEnzymes2Pathways,
 		[c_strFilePathwayC] ),
+	] + ( [
+	CProcessor( "01",	"02a",	"nve",	c_strProgEnzymes2Pathways,
+		[c_strFilePathwayC] ),
+	] if c_fParameterEval else [] ) + [
 	CProcessor( "01",	"02a",	"mpt",	c_strProgEnzymes2PathwaysMP,
 		[c_strFileMP, c_strFileKEGGC] ),
 #	CProcessor( "11",	"02a",	"mpt",	c_strProgEnzymes2PathwaysMP,
@@ -161,11 +171,17 @@ c_apProcessors				= [
 #		[c_strFileTaxPC],					["1"] ),
 # Mean is most consistently best for abundance + coverage
 # Particularly in most limited data (mblastx with <=90% ID)
-#	CProcessor( "02a",	"02b",	"nve",	c_strProgTaxlim,
-#		[c_strFileTaxPC],					[] ),
+	] + ( [
+	CProcessor( "02a",	"02b",	"nve",	c_strProgTaxlim,
+		[c_strFileTaxPC],					[] ),
+	] if c_fParameterEval else [] ) + [
 # Even naive taxonomic limitation substantially outperforms none
-	CProcessor( "12a",	"12b",	"nul",	c_strProgCat,
+	CProcessor( "02an",	"02bn",	"nul",	c_strProgCat,
 		[],									["1"] ),
+	] + ( [
+	CProcessor( "02a",	"02b",	"nul",	c_strProgCat,
+		[],									["1"] ),
+	] if c_fParameterEval else [] ) + [
 # Providing the KOC file allows taxonomic limitation to also adjust for the
 # expected copy # of each KO based on organismal freq, which helps a good bit
 	CProcessor( "02a",	"02b",	"cop",	c_strProgTaxlim,
@@ -174,12 +190,16 @@ c_apProcessors				= [
 # smoothing
 #===============================================================================
 # Witten-Bell doesn't actually help more than naive smoothing
-#	CProcessor( "02b",	"03a",	"nve",	c_strProgSmooth,
-#		[c_strFilePathwayC] ),
+	] + ( [
+	CProcessor( "02b",	"03a",	"nve",	c_strProgSmooth,
+		[c_strFilePathwayC] ),
+	] if c_fParameterEval else [] ) + [
 # No smoothing at all seems to work better with the new KEGG modules
-#	CProcessor( "02b",	"03a",	"wbl",	c_strProgSmoothWB,
-#		[c_strFilePathwayC] ),
-	CProcessor( "12b",	"13a",	"nul",	c_strProgCat,
+	] + ( [
+	CProcessor( "02b",	"03a",	"wbl",	c_strProgSmoothWB,
+		[c_strFilePathwayC] ),
+	] if c_fParameterEval else [] ) + [
+	CProcessor( "02bn",	"03an",	"nul",	c_strProgCat,
 		[] ),
 	CProcessor( "02b",	"03a",	"nul",	c_strProgCat,
 		[] ),
@@ -187,12 +207,18 @@ c_apProcessors				= [
 # gap filling
 #===============================================================================
 # No gap filling is much worse than naive gap filling
-	CProcessor( "13a",	"13b",	"nul",	c_strProgCat,
+	CProcessor( "03an",	"03bn",	"nul",	c_strProgCat,
 		[] ),
+	] + ( [
+	CProcessor( "03a",	"03b",	"nul",	c_strProgCat,
+		[] ),
+	] if c_fParameterEval else [] ) + [
 # Average is better than median for abundance, worse for coverage
 # IQRs/STDs don't really matter
-#	CProcessor( "03a",	"03b",	"nae",	c_strProgGapfill,
-#		[c_strFilePathwayC],			["0", "0"] ),
+	] + ( [
+	CProcessor( "03a",	"03b",	"nae",	c_strProgGapfill,
+		[c_strFilePathwayC],				["0", "0"] ),
+	] if c_fParameterEval else [] ) + [
 	CProcessor( "03a",	"03b",	"nve",	c_strProgGapfill,
 		[c_strFilePathwayC] ),
 #===============================================================================
@@ -201,7 +227,7 @@ c_apProcessors				= [
 # Xipe at this stage hurts performance (too many rare enzymes lost)
 #	CProcessor( "03b",	"03c",	"xpe",	c_strProgTrimXP,
 #		[c_strProgXipe] ),
-	CProcessor( "13b",	"13c",	"nul",	c_strProgCat,
+	CProcessor( "03bn",	"03cn",	"nul",	c_strProgCat,
 		[] ),
 	CProcessor( "03b",	"03c",	"nul",	c_strProgCat,
 		[] ),
@@ -216,7 +242,7 @@ c_apProcessors				= [
 		[c_strFilePathwayC, c_strFileModuleP] ),
 	CProcessor( "03d",	"04a",	"xpe",	c_strProgPathCovXP,
 		[c_strProgXipe] ),
-	CProcessor( "13c",	"04a",	"nve",	c_strProgPathCov,
+	CProcessor( "03cn",	"04a",	"nve",	c_strProgPathCov,
 		[c_strFilePathwayC] ),
 #===============================================================================
 # ABUNDANCE
@@ -225,8 +251,8 @@ c_apProcessors				= [
 # But average of the upper half is better!
 	CProcessor( "03c",	"04b",	"nve",	c_strProgPathAb,
 		[c_strFilePathwayC, c_strFileModuleP] ),
-	CProcessor( "13c",	"04b",	"nul",	c_strProgPathAb,
-		[c_strFilePathwayC],					["\"\"", "0"] ),
+	CProcessor( "03cn",	"04b",	"nul",	c_strProgPathAb,
+		[c_strFilePathwayC],				["\"\"", "0"] ),
 ]
 
 #===============================================================================

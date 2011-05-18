@@ -47,7 +47,7 @@ funcAUC <- function( pPred ) {
 	pPerf <- performance( pPred, "auc", fpr.stop = c_dFPR )
 	return( pPerf@y.values[1][[1]] / c_dFPR ) }
 
-funcPlotAbd <- function( adRMSE, astrCom ) {
+funcPlotAbd <- function( adRMSE, astrCom, strTitle ) {
 
 	afRMSE <- adRMSE > 0
 	adRMSE <- adRMSE[afRMSE]
@@ -56,50 +56,10 @@ funcPlotAbd <- function( adRMSE, astrCom ) {
 		adRMSE <- c(0)
 		astrCom <- c("") }
 
-	par( mar = c(12, 4, 4, 11) + 0.1 )
 	dMin <- min( adRMSE ) * 0.99
 	adX <- barplot( adRMSE, ylim = c(dMin, max( adRMSE ) * 1.01), xpd = FALSE,
-		ylab = "Cor.", main = "Abundance" )
-	text( adX, dMin * 0.999, astrCom, xpd = TRUE, srt = -45, adj = 0 ) }
-
-funcPlotAbdFact <- function( adRMSE, astrCom, strFact, strName ) {
-	
-	aiIn <- c()
-	for( i in 1:length( astrCom ) ) {
-		if( length( grep( strFact, astrCom[i] ) ) ) {
-			aiIn <- c(aiIn, i) } }
-	aiOut <- setdiff( 1:length( astrCom ), aiIn )
-	adAve <- c(mean( adRMSE[aiIn] ), mean( adRMSE[aiOut] ))
-	adStd <- c(sd( adRMSE[aiIn] ), sd( adRMSE[aiOut] ))
-	adStd <- adStd * ( max( adAve ) - min( adAve ) ) / mean( adStd )
-	dStd <- max( adStd )
-	dMin <- ( min( adAve ) - dStd ) * 0.99
-	adX <- barplot( adAve, ylim = c(dMin, ( max( adAve ) + dStd ) * 1.01), xpd = FALSE,
-		ylab = "Cor.", main = strName )
-	errbar( adX, adAve, adAve + adStd, adAve - adStd, add = TRUE )
-	text( adX, dMin * 0.999, c(strName, paste( "~", strName, sep = "" )), xpd = TRUE, srt = -45, adj = 0) }
-
-funcPlotCovFact <- function( lsPred, astrCom, strFact, strName ) {
-	
-	aiIn <- c()
-	adAUC <- c()
-	for( i in 1:length( astrCom ) ) {
-		adAUC <- c(adAUC, funcAUC( lsPred[[i]] ))
-		if( length( grep( strFact, astrCom[i] ) ) ) {
-			aiIn <- c(aiIn, i) } }
-	aiOut <- setdiff( 1:length( astrCom ), aiIn )
-	adAve <- c(mean( adAUC[aiIn] ), mean( adAUC[aiOut] ))
-	adStd <- c(sd( adAUC[aiIn] ), sd( adAUC[aiOut] ))
-	adStd <- adStd * ( max( adAve ) - min( adAve ) ) / mean( adStd )
-	if( !length( adAve ) ) {
-		adAve <- c(0)
-		adStd <- c(0) }
-	dStd <- max( adStd )
-	dMin <- ( min( adAve ) - dStd ) * 0.99
-	adX <- barplot( adAve, ylim = c(dMin, ( max( adAve ) + dStd ) * 1.01), xpd = FALSE,
-		ylab = sprintf( "pAUC %g", c_dFPR ), main = strName )
-	errbar( adX, adAve, adAve + adStd, adAve - adStd, add = TRUE )
-	text( adX, dMin * 0.999, c(strName, paste( "~", strName, sep = "" )), xpd = TRUE, srt = -45, adj = 0) }
+		ylab = "Correlation", main = sprintf( "Abundance (%s)", strTitle ) )
+	text( adX, dMin * 0.995, astrCom, xpd = TRUE, srt = -45, adj = 0 ) }
 
 funcPerfs <- function( lsPred ) {
 
@@ -138,7 +98,7 @@ funcPlotCov <- function( lsPred, astrCom ) {
 	astrNames <- astrNames[aiOK]
 	legend( "bottomright", astrNames, col = aiCol, lty = aiLty, lwd = 2 ) }
 
-funcPlotCovAUC <- function( lsPred, astrCom ) {
+funcPlotCovAUC <- function( lsPred, astrCom, strTitle ) {
 	
 	adAUC <- c()
 	lsPerf <- funcPerfs( lsPred )
@@ -153,11 +113,10 @@ funcPlotCovAUC <- function( lsPred, astrCom ) {
 		adAUC <- c(0)
 		astrCom <- c("") }
 	
-	par( mar = c(14, 4, 4, 11) + 0.1 )
 	dMin <- min( adAUC ) * 0.99
 	adX <- barplot( adAUC, ylim = c(dMin, max( adAUC ) * 1.01), xpd = FALSE,
-		ylab = "pAUC", main = sprintf( "Coverage (pAUC %g)", c_dFPR ) )
-	text( adX, dMin * 0.999, astrCom, xpd = TRUE, srt = -45, adj = 0 ) }
+		ylab = "pAUC", main = sprintf( "Coverage (%s, pAUC %g)", strTitle, c_dFPR ) )
+	text( adX, dMin * 0.995, astrCom, xpd = TRUE, srt = -45, adj = 0 ) }
 
 funcBase <- function( lsData, astrIn = c(), astrOut = c() ) {
 
@@ -195,18 +154,36 @@ funcBase <- function( lsData, astrIn = c(), astrOut = c() ) {
 #	next }
 #if( !length( grep( "(?:P30E1)|(?:annodb)", strCom ) ) ) {
 #	next }
-		astrCom <- c(astrCom, sub( "_vs_All_annodb", "_mbx", sub( "mock_", "",
-			sub( ".alignments", "", strCom ) ) ))
-
-		if( length( grep( "mtc", strCom ) ) ) {
-			aiAbd <- setdiff( 1:length( astrPAbd ), grep( '^((ko)|M|K)[0-9]+$', astrPAbd ) )
-			aiCov <- setdiff( 1:length( astrPCov ), grep( '^((ko)|M|K)[0-9]+$', astrPCov ) )
-		} else if( length( grep( "mpm", strCom ) ) ) {
-			aiAbd <- grep( '^(M|K)[0-9]+$', astrPAbd )
-			aiCov <- grep( '^(M|K)[0-9]+$', astrPCov )
-		} else {
-			aiAbd <- grep( '^((ko)|K)[0-9]+$', astrPAbd )
-			aiCov <- grep( '^((ko)|K)[0-9]+$', astrPCov ) }
+		strName <- sub( "_vs_All_annodb", "_mbx", sub( "mock_", "", sub( ".alignments", "", strCom ) ) )
+#		strName <- sub( "stg", "Stg.", strName )
+#		strName <- sub( "even", "Even", strName )
+#		strName <- sub( "hc_", "HC", strName )
+#		strName <- sub( "lc_", "LC", strName )
+		strName <- sub( "((stg)|(even))_[hl]c_", "", strName )
+		strName <- sub( "mbx.", "", strName )
+		strName <- sub( "htc.", "", strName )
+		strName <- sub( "keg.", "", strName )
+		strName <- sub( "(mp[mt]..{7}).nae", "\\1 +GFAve", strName )
+		strName <- sub( "(mp[mt]..{7}).nve", "\\1 +GF", strName )
+		strName <- sub( "(mp[mt]..{7}).nul", "\\1 -GF", strName )
+		strName <- sub( "(mp[mt]..{3}).wbl", "\\1 +SmWB", strName )
+		strName <- sub( "(mp[mt]..{3}).nve", "\\1 +Sm", strName )
+		strName <- sub( "(mp[mt]..{3}).nul", "\\1 -Sm", strName )
+		strName <- sub( "(mp[mt]).cop", "\\1 +TaxC#", strName )
+		strName <- sub( "(mp[mt]).nve", "\\1 +Tax", strName )
+		strName <- sub( "(mp[mt]).nul", "\\1 -Tax", strName )
+		strName <- sub( "mpm", "Mod.", strName )
+		strName <- sub( "mpt", "Path", strName )
+		strName <- sub( "keg", "KOs", strName )
+		strName <- sub( ".nul.((nve)|(nul))(.xpe)?$", "", strName )
+		strName <- sub( "nve.nve.nul.nul.nul$", "-All BBH", strName )
+		strName <- sub( "nve$", "BBH", strName )
+		strName <- gsub( "_", " ", strName )
+#		print(strName)
+		astrCom <- c(astrCom, strName)
+		
+		aiAbd <- which( apply( t(astrPAbd), 2, function( s ) { return( funcGrepRow( strCom, s ) ) } ) )
+		aiCov <- which( apply( t(astrPCov), 2, function( s ) { return( funcGrepRow( strCom, s ) ) } ) )
 		
 		if( ( strCom %in% colnames( frmeAbd ) ) && ( max( adGSAbd[aiAbd] ) > 0 ) ) {
 			dCur <- funcAcc( adGSAbd[aiAbd] / sum( adGSAbd[aiAbd] ), frmeAbd[aiAbd, strCom] )
@@ -221,22 +198,23 @@ funcBase <- function( lsData, astrIn = c(), astrOut = c() ) {
 		lsPred <- c(lsPred, pCur) }
 	return( list( names = astrCom, rmse = adRMSE, pred = lsPred ) ) }
 
-funcScatter <- function( lsData, strTarget ) {
+funcGrepRow <- function( strBase, strRow ) {
+	
+	if( length( grep( "mtc", strBase ) ) ) {
+		fRet <- !length( grep( '^((ko)|M|K)[0-9]+$', strRow ) )
+	} else if( length( grep( "mpt", strBase ) ) ) {
+		fRet <- length( grep( "^((ko)|K)[0-9]+$", strRow ) )
+	} else {
+		fRet <- length( grep( "^(M|K)[0-9]+$", strRow ) ) }
+	return( !!fRet ) }
+	
+funcScatter <- function( lsData, strTarget, strName ) {
 
 	frmeAbd <- lsData$abd
-	astrPaths <- c()
-	for( strPath in rownames( frmeAbd ) ) {
-		fOK <- TRUE
-		if( !length( grep( 'mtc', strTarget ) ) == !length( grep( '^((ko)|M|K)[0-9]+$', strPath ) ) ) {
-			fOK <- FALSE }
-		if( !!length( grep( 'mpm', strTarget ) ) == !length( grep( '^M[0-9]+$', strPath ) ) ) {
-			fOK <- FALSE }
-		if( fOK ) {
-			astrPaths <- c(strPath, astrPaths) } }
-
+	aiPaths <- which( apply( t(rownames( frmeAbd )), 2, function( s ) { return( funcGrepRow( strTarget, s ) ) } ) )
 	strBase <- colnames( frmeAbd )[1]
-	adGSAbd <- frmeAbd[astrPaths, strBase] / max( 1e-10, sum( frmeAbd[astrPaths, strBase] ) )
-	adX <- frmeAbd[astrPaths, strTarget]
+	adGSAbd <- frmeAbd[aiPaths, strBase] / max( 1e-10, sum( frmeAbd[aiPaths, strBase] ) )
+	adX <- frmeAbd[aiPaths, strTarget]
 	ad <- c(adX, adGSAbd)
 	if( length( adX ) ) {
 		dMin <- min( ad )
@@ -248,7 +226,7 @@ funcScatter <- function( lsData, strTarget ) {
 	adLim <- c(0.99 * dMin, 1.01 * dMax)
 	plot( adX, adGSAbd, xlim = adLim, ylim = adLim, xlab = sprintf( "Predicted (r = %0.4f)",
 		funcAcc( adX, adGSAbd ) ), ylab = "Actual", pch = "o",
-		main = sprintf( "Abundance (%s)", strTarget ) )
+		main = sprintf( "Abundance (%s)", strName ) )
 	if( length( adX ) ) {
 		lmod <- lm( adGSAbd ~ adX )
 		abline( reg = lmod )
@@ -256,21 +234,27 @@ funcScatter <- function( lsData, strTarget ) {
 
 funcSAUC <- function( lsData, iCol ) {
 
-	funcScatter( lsData, colnames( lsData$abd )[iCol + 1] )
 	lsBase <- funcBase( lsData, c(colnames( lsData$cov )[iCol + 1]) )
+	funcScatter( lsData, colnames( lsData$abd )[iCol + 1], lsBase$names[1] )
 	funcPlotCov( lsBase$pred, lsBase$names ) }
 	
-funcPathways <- function( strFile ) {
+funcTitle <- function( strFile ) {
 	
-	lsRet <- list()
-	for( strLine in readLines( strFile ) ) {
-		astrLine <- strsplit( strLine, "\t" )[[1]]
-		lsRet[astrLine[1]] <- list(astrLine[2:length( astrLine )]) }
-	
-	return( lsRet ) }
+	strRet <- ""
+	if( length( grep( "even", strFile ) ) ) {
+		strRet <- "Even" }
+	if( length( grep( "stg", strFile ) ) ) {
+		strRet <- "Stg." }
+	if( length( grep( "hc", strFile ) ) ) {
+		strRet <- sprintf( "%s %s", strRet, "HC" ) }
+	if( length( grep( "lc", strFile ) ) ) {
+		strRet <- sprintf( "%s %s", strRet, "LC" ) }
+	if( !nchar( strRet ) ) {
+		strRet <- sub( "\\.\\S+$", strFile ) }
+	return( strRet ) }
 
-c_iWidth	<- 4
-c_iHeight	<- 4
+c_iWidth	<- 2.75
+c_iHeight	<- 2.5
 c_dFPR		<- 0.1
 
 strOutput		<- "output/mock_stg_hc_04.pdf"
@@ -292,16 +276,18 @@ if( !is.finite( iTypes ) ) {
 	iTypes <- 0 }
 
 fPDF <- length( grep( "\\.pdf$", strOutput ) )
-iWidth <- 1 + ( iTypes / 10 )
+iWidth <- 1 + ( iTypes / 30 )
 if( fPDF ) {
 	pdf( strOutput, width = 2 * iWidth * c_iWidth, height = c_iHeight * ( 1 + iTypes ) )
 } else {
-	png( strOutput, units = "in", res = 160, width = 2 * ( iWidth + c_iWidth ), height = c_iHeight * ( 1 + iTypes ) ) }
+	png( strOutput, units = "in", res = 160, width = 2 * iWidth * c_iWidth, height = c_iHeight * ( 1 + iTypes ) ) }
 par( mfrow = c(1 + iTypes, 2) )
 lsBase <- funcBase( lsData )
-funcPlotAbd( lsBase$rmse, lsBase$names )
-funcPlotCovAUC( lsBase$pred, lsBase$names )
-par( mar = c(5, 4, 4, 2) + 0.1 )
+par( mar = c(6.5, 4, 3, 2.25) + 0.1 )
+strTitle <- funcTitle( strOutput )
+funcPlotAbd( lsBase$rmse, lsBase$names, strTitle )
+funcPlotCovAUC( lsBase$pred, lsBase$names, strTitle )
+par( mar = c(4, 4, 3, 1) + 0.1 )
 for( iType in 1:iTypes ) {
 	funcSAUC( lsData, iType ) }
 dev.off( )

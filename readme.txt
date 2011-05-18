@@ -288,3 +288,8 @@ v0.93, 04-26-11
 v0.94, 05-03-11
 ----
 * Fix a problem with non-pathway BRITE entities in synthetic gold standard
+
+v0.95, 05-18-11
+----
+* Fix a typo in hits2enzymes.py (only affected unused filter option)
+* Add complete parameter evaluation process to HMP pipeline

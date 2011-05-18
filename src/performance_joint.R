@@ -171,7 +171,7 @@ funcScatter <- function( lsData, astrNames, astrTargets ) {
 			abline( reg = lmod )
 			dX <- 0.6 * dMax
 			dY <- predict( lmod, data.frame( adX = dX ) )
-			dR <- sprintf( "%0.4f", funcAcc( adX, adGSAbd ) )
+			dR <- sprintf( "%0.2f", funcAcc( adX, adGSAbd ) )
 			text( dX, dY, bquote( rho == .(dR) ), pos = 4, offset = 0.67 ) } }
 	abline( 0, 1, lwd = 2 )
 	legend( "bottomright", astrNames, bg = "white", pch = c_aChars[1:length( astrNames )] )
@@ -190,7 +190,7 @@ c_iWidth	<- 5.5
 c_iHeight	<- 4.5
 c_dFPR		<- 0.1
 
-c_astrTargets	<- c("mock_stg_hc_vs_All_annodb-htc-keg-mpm-cop-nul-nve-nul-nve", "mock_stg_hc_vs_All_annodb-htc-keg-nve-nul-nul-nul-nul")
+c_astrTargets	<- c("mock_stg_hc_vs_All_annodb-htc-keg-mpm-cop-nul-nve-nul-nve", "mock_stg_hc_vs_All_annodb-htc-nve-nve-nul-nul-nul-nul")
 strType			<- "mock_stg_hc"
 c_strRE			<- '^M[0-9]+$' # '^ko[0-9]+$'
 c_strOutput		<- paste( strType, ".pdf", sep = "" )

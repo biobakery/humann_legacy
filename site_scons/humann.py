@@ -331,9 +331,10 @@ def main( hashVars ):
 					astrNew.append( strTo )
 					pE.Command( strTo, [strFrom] + pProc.deps( ), pProc.ex( ) )
 
-					mtch = re.search( '_(\d{2}[^-]*)', strTo )
+					mtch = re.search( '_(\d{2})([^-]*)', strTo )
 					if mtch:
-						hashTypes.setdefault( mtch.group( 1 ), set() ).add( strTo )
+						for strType in (mtch.group( 1 ), "".join( mtch.groups( ) )):
+							hashTypes.setdefault( strType, set() ).add( strTo )
 			if not fHit:
 				astrTo.append( strFrom )
 		astrFrom = astrNew
