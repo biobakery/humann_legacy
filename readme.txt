@@ -13,8 +13,8 @@ HUMAnN is a pipeline for efficiently and accurately determining the presence/abs
 HUMAnN can thus be used in tandem with any translated BLAST program to convert sequence reads into coverage and abundance tables summarizing the gene families and pathways in a microbial community.  This lets you analyze a collection of metagenomes as a matrix of gene/pathway abundances, just like you might analyze a collection of microarrays.
 
 If you use this software, please cite our paper:
-"Metabolic reconstruction of microbial communities from metagenomic data"
-***Citation here***
+"Metabolic reconstruction for metagenomic data and its application to the human microbiome"
+Sahar Abubucker, Nicola Segata, Johannes Goll, Alyxandria M. Schubert, Jacques Izard, Brandi L. Cantarel, Beltran Rodriguez-Mueller, Jeremy Zucker, Mathangi Thiagarajan, Bernard Henrissat, Owen White, Scott T. Kelley, Barbara Methé, Patrick D. Schloss, Dirk Gevers, Makedonka Mitreva, Curtis Huttenhower
 
 Many thanks to the NIH and to the entire Human Microbiome Project team for making the HMP possible and for the many collaborators who helped to make HUMAnN a reality.  Sahar Abubucker and Makedonka Mitreva (Washington University) co-led the Metabolic Reconstruction group, the pipeline incorporates software from Yuzhen Ye (Indiana University), Beltran Rodriguez-Mueller (SDSU), and Pat Schloss (University of Michigan), and specific contributors include Alyx Schubert (University of Michigan), Jeremy Zucker (Broad Institute), Brandi Cantarel (UMD), Qiandong Zeng (Broad Institute), Johannes Goll (JCVI), and many others.
 
@@ -23,7 +23,7 @@ BASIC OPERATION
 
 HUMAnN uses the scons build system to drive its scientific workflow (see PREREQUISITES).  scons works very much like make, converting a set of inputs into a set of outputs one step at a time, and running only the steps necessary to produce the desired output.  Thus, to analyze your own data:
 
-* Place one or more translated BLAST results using KO identifiers in the "input" directory (optionally gzipped or bzipped).
+* Place one or more translated BLAST results using KEGG gene identifiers in the "input" directory (optionally gzipped or bzipped).
 
 * Edit the "SConstruct" file; in particular, make sure that the input processors include one configured for your BLAST file name(s) and format(s).
 
@@ -37,7 +37,7 @@ PREREQUISITES
 HUMAnN has no installation per se, but it does depend on the following items:
 
 * A network connection
-HUMAnN downloads a number of data and software components from standard repositories (primarily KEGG) during exection.  Please ensure that a network connection is available at the least for the first run.  HUMAnN will use "curl" by default to download files, and this can be changed (e.g. to use "wget") by editing the humann.py file.
+HUMAnN downloads a number of data and software components from standard repositories during exection.  Please ensure that a network connection is available at the least for the first run.  HUMAnN will use "curl" by default to download files, and this can be changed (e.g. to use "wget") by editing the humann.py file.
 
 * A bunch of RAM
 Processing one Illumina lane of metagenomic reads can take as much as ~8-10GB of memory, although it will often take much less depending on the data.  Consider yourself warned.
@@ -52,15 +52,11 @@ As of this writing, we use exactly one feature unique to Python 2.7, math.gamma.
 * blastx
 http://www.ncbi.nlm.nih.gov/blast/
 
-Please note that HUMAnN does not run blastx for you.  It instead consumes tabular BLAST results as input.  We recommend the default "-outfmt 6" setting as described below and in the provided SConstruct configuration.  Alternatively, input processors are also provided for accelerated BLAST implementations such as mapx and mblastx.
+Please note that HUMAnN does not run blastx for you.  It instead consumes tabular BLAST results as input.  We recommend the default "-outfmt 6" setting as described below and in the provided SConstruct configuration.  Alternatively, input processors are also provided for accelerated BLAST implementations such as mapx, mblastx, or usearch.
 
 * MinPath (automatically downloaded)
 http://omics.informatics.indiana.edu/MinPath/
 See Ye et al, PLoS Computational Biology 2009
-
-* KEGG (automatically downloaded)
-http://www.genome.jp/kegg/
-See Kanehisa et al, NAR 2010
 
 * BioCyc (optional, automatically downloaded)
 http://biocyc.org
@@ -96,6 +92,10 @@ template-name frame read-name template-start template-end template-length read-s
 mblastx
 ----
 Query_Id Reference_Id E_Value_Bit_Score Identity_Percentage_Length_of_HSP Number_of_Positives_Frame_#s Alignment_Start_in_Query Alignment_End_in_Query Alignment_Start_in_Reference Alignment_End_in_Reference
+
+usearch
+----
+Note that usearch can be treated identically to "blastx -outfmt 6" if the "--blast6out" flag is provided.
 
 OUTPUTS
 ====
@@ -260,6 +260,26 @@ Pathway coverage calculated as fraction of genes in pathway at or above global m
 ----
 Pathway abundance calculated as average abundance of the most abundant half of genes in the pathway.
 
+NOTES
+====
+
+KEGG
+----
+Since HUMAnN's development, KEGG has gone commercial.  This is a huge blow to the academic community at large, and an unfortunate inconvenience for HUMAnN in particular.  In order to compromise between minimal disruption of HUMAnN operation and respecting KEGG's intellectual property, the following guidelines have been followed:
+
+* Files derived from KEGG necessary for normal HUMAnN operation are included in the data directory.  These include the basic structure of KEGG pathways and modules, gene lengths, and ID/name mappings.
+
+* The more detailed files from KEGG needed for synthetic metagenome construction and evaluation are _not_ included, thus rendering the synth sub-project inoperable without access to KEGG inputs.  We apologize for this inconvenience and urge any impacted users to contact KEGG directly to inform them of the problem.  Please let us know if you're interested in information on additional workarounds to enable synthetic metagenome evaluation.
+
+maq installation issues
+----
+Some users have reported freezes during the synthetic metagenome maq installation process that are outside of HUMAnN's control.  If maq locks up during compilation or installation, feel free to install it directly from the appropriate Sourceforge package in maq-0.7.1/maq (as expected by HUMAnN) and replace the funcUntarMAQ function in synth/SConstruct with
+
+def funcUntarMAQ( target, source, env ):
+    return 0
+
+Note that the synthetic metagenomes are an optional component not needed for normal HUMAnN operation.
+
 VERSION HISTORY
 ====
 
@@ -293,3 +313,16 @@ v0.95, 05-18-11
 ----
 * Fix a typo in hits2enzymes.py (only affected unused filter option)
 * Add complete parameter evaluation process to HMP pipeline
+
+v0.96, 07-28-11
+----
+* MAJOR CHANGE: KEGG is now defunct, and HUMAnN has been updated accordingly
+** KEGG derived information needed for normal operation is included
+** KEGG files needed for synthetic metagenome construction are _not_ included
+** "Frozen" synthetic metagenome evaluation is still possible
+** Please contact us directly for more information if needed
+* Add documentation on potential maq issues (thanks to Shinichi Sunagawa!)
+* Fix a typo in fastq2fasta.py formatting (thanks to Shinichi Sunagawa!)
+* Fix a typo in module2modulec.py formatting (thanks to Kathryn Iverson!)
+* Fix a typo in eco.py for overly sparse input files (thanks to Jeffrey Werner!)
+* Work around Mac OS X zcat issues (thanks to Jeffrey Werner!)

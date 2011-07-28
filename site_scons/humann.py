@@ -78,27 +78,37 @@ c_strDirSrc					= "src"
 c_strDirSynth				= "synth"
 c_strDirCyc					= "biocyc"
 
+# KEGG is now defunct, and HUMAnN has been adapted accordingly using final v56
+c_strURLKEGG				= "" # "ftp://ftp.genome.jp/pub/kegg/"
+
 def data( strFile ):
 	return "/".join( (c_strDirData, strFile) )
-c_strFileMapKEGGTXT			= data( "map_kegg.txt" )
+# KEGG
 c_strFileMapKEGGTAB			= data( "map_title.tab" )
 c_strFileKO					= data( "ko" )
 c_strFileGenesPEP			= data( "genes.pep" )
+c_strFileModule				= data( "module" )
+# MetaCyc
 c_strFileMetaCycGenes		= data( "reactions.dat" )
 c_strFileMetaCycPaths		= data( "pathways.dat" )
+# KEGG derived
+c_strFileMapKEGGTXT			= data( "map_kegg.txt" )
 c_strFileKOC				= data( "koc" )
-c_strFileMCC				= data( "mcc" )
-c_strFileMCPC				= data( "mcpc" )
-c_strFileCOGC				= data( "cogc" )
-c_strFileECC				= data( "ecc" )
-c_strFileKEGGC				= data( "keggc" )
-c_strFileGeneLs				= data( "genels" )
-c_strFilePathwayC			= data( "pathwayc" )
-c_strFileTaxPC				= data( "taxpc" )
-c_strFileMPTARGZ			= data( "minpath1.2.tar.gz" )
-c_strFileModule				= data( "module" )
 c_strFileModuleC			= data( "modulec" )
 c_strFileModuleP			= data( "modulep" )
+c_strFileKEGGC				= data( "keggc" )
+c_strFileGeneLs				= data( "genels" )
+c_strFileTaxPC				= data( "taxpc" )
+c_strFileECC				= data( "ecc" )
+c_strFileCOGC				= data( "cogc" )
+c_strFileKOCGZ				= data( "koc.gz" )
+c_strFileGeneLsGZ			= data( "genels.gz" )
+# MetaCyc derived
+c_strFileMCC				= data( "mcc" )
+c_strFileMCPC				= data( "mcpc" )
+# Other
+c_strFilePathwayC			= data( "pathwayc" )
+c_strFileMPTARGZ			= data( "minpath1.2.tar.gz" )
 c_strDirMP					= data( "MinPath" )
 
 def prog( strFile ):
@@ -136,8 +146,6 @@ c_strProgExclude			= prog( "exclude.py" )
 c_strProgNormalize			= prog( "normalize.py" )
 c_strProgEco				= prog( "eco.py" )
 c_strProgMetadata			= prog( "metadata.py" )
-c_strProgUnhuman			= prog( "unhuman.py" )
-c_strProgUnhumanR			= prog( "unhuman.R" )
 #===============================================================================
 # Preprocessing scripts
 #===============================================================================
@@ -178,7 +186,7 @@ def cts( astrTargets, astrSources ):
 	strT, astrSs = ts( astrTargets, astrSources )
 	strCmd = "cat"
 	if astrSs[0].find( ".gz" ) >= 0:
-		strCmd = "z" + strCmd
+		strCmd = "gunzip -c"
 	elif astrSs[0].find( ".bz2" ) >= 0:
 		strCmd = "bunzip2 -c"
 	return (strCmd, strT, astrSs)
@@ -211,6 +219,14 @@ def main( hashVars ):
 		strCmd, strT, astrSs = cts( target, source )
 		return ex( out( " ".join( [strCmd, astrSs[0], "|"] + astrSs[1:] ), strT ) )
 	
+	def crn( strCmd ):
+		
+		def rn( target, source, env, strCmd = strCmd ):
+		
+			strCat, strT, astrSs = cts( target, source )
+			return ex( out( " ".join( [strCat, astrSs[0], "|"] + [strCmd] + astrSs[1:] ), strT ) )
+		return rn
+	
 	def download( strURL, strT ):
 		
 		iRet = ex( out( " ".join( ("curl", "-f", "-z", strT, "'" + strURL + "'") ), strT ) )
@@ -226,48 +242,54 @@ def main( hashVars ):
 #===============================================================================
 # KEGG
 #===============================================================================
-	
-	def funcFileMapTitle( target, source, env ):
-		strT, astrSs = ts( target, source )
-		return download( "ftp://ftp.genome.jp/pub/kegg/pathway/map_title.tab", strT )
-	pE.Command( c_strFileMapKEGGTAB, None, funcFileMapTitle )
-	ret( pE, c_strFileMapKEGGTAB )
-	pE.Command( c_strFileMapKEGGTXT, [c_strFileMapKEGGTAB, c_strProgTitles2Txt, c_strFileModule], rn )
-	
-	def funcFileModule( target, source, env ):
-		strT, astrSs = ts( target, source )
-		return download( "ftp://ftp.genome.jp/pub/kegg/module/module", strT )
-	pE.Command( c_strFileModule, None, funcFileModule )
-	ret( pE, c_strFileModule )
-	pE.Command( c_strFileModuleC, [c_strFileModule, c_strProgModule2ModuleC], rn )
-	def funcModuleP( target, source, env ):
-		strCmd, strT, astrSs = cts( target, source )
-		return ex( out( " ".join( [strCmd, astrSs[0], "|", astrSs[1], "1"] ), strT ) )
-	pE.Command( c_strFileModuleP, [c_strFileModule, c_strProgModule2ModuleC], funcModuleP )
-	
-	for astrFile in ([c_strFileKO, "ko"], [c_strFileGenesPEP, "fasta/genes.pep"]):
-		def funcFileKEGG( target, source, env, strPath = astrFile[1] ):
+
+	if c_strURLKEGG:
+		def funcFileMapTitle( target, source, env ):
 			strT, astrSs = ts( target, source )
-			return download( "ftp://ftp.genome.jp/pub/kegg/genes/" + strPath, strT )
-		pE.Command( astrFile[0], None, funcFileKEGG )
-		ret( pE, astrFile[0] )
-	
-	for astrKO in ([c_strFileKOC, c_strProgKO2KOC], [c_strFileKEGGC, c_strProgKO2KEGGC],
-		[c_strFileCOGC, c_strProgKO2COGC], [c_strFileECC, c_strProgKO2ECC]):
-		pE.Command( astrKO[0], [c_strFileKO] + astrKO[1:], rn )
-	pE.Command( c_strFileGeneLs, [c_strFileGenesPEP, c_strProgGenes2GeneLs], rn )
-	
-	def funcTaxPC( target, source, env ):
+			return download( c_strURLKEGG + "/pathway/map_title.tab", strT )
+		pE.Command( c_strFileMapKEGGTAB, None, funcFileMapTitle )
+		ret( pE, c_strFileMapKEGGTAB )
+		pE.Command( c_strFileMapKEGGTXT, [c_strFileMapKEGGTAB, c_strProgTitles2Txt, c_strFileModule], rn )
 		
-		strT, astrSs = ts( target, source )
-		strPattern = "*_pathway.list"
-		iRet = 0
-		if not glob.glob( c_strDirData + "/" + strPattern ):
-			iRet = ex( "cd " + c_strDirData + " && " +
-				"lftp -c mget ftp://ftp.genome.jp/pub/kegg/genes/organisms/*/" + strPattern )
-		return ( iRet or ex( out( " ".join( (astrSs[0], c_strDirData + "/" + strPattern) ),
-			strT ) ) )
-	pE.Command( c_strFileTaxPC, [c_strProgPaths2TaxPC], funcTaxPC )
+		def funcFileModule( target, source, env ):
+			strT, astrSs = ts( target, source )
+			return download( c_strURLKEGG + "/module/module", strT )
+		pE.Command( c_strFileModule, None, funcFileModule )
+		ret( pE, c_strFileModule )
+		pE.Command( c_strFileModuleC, [c_strFileModule, c_strProgModule2ModuleC], rn )
+		def funcModuleP( target, source, env ):
+			strCmd, strT, astrSs = cts( target, source )
+			return ex( out( " ".join( [strCmd, astrSs[0], "|", astrSs[1], "1"] ), strT ) )
+		pE.Command( c_strFileModuleP, [c_strFileModule, c_strProgModule2ModuleC], funcModuleP )
+	
+		for astrFile in ([c_strFileKO, "ko"], [c_strFileGenesPEP, "fasta/genes.pep"]):
+			def funcFileKEGG( target, source, env, strPath = astrFile[1] ):
+				strT, astrSs = ts( target, source )
+				return download( c_strURLKEGG + "/genes/" + strPath, strT )
+			pE.Command( astrFile[0], None, funcFileKEGG )
+			ret( pE, astrFile[0] )
+	
+		for astrKO in ([c_strFileKOC, c_strProgKO2KOC], [c_strFileKEGGC, c_strProgKO2KEGGC],
+			 [c_strFileCOGC, c_strProgKO2COGC], [c_strFileECC, c_strProgKO2ECC]):
+			pE.Command( astrKO[0], [c_strFileKO] + astrKO[1:], rn )
+		pE.Command( c_strFileKOCGZ, c_strFileKOC, crn( "gzip -c" ) )
+		pE.Command( c_strFileGeneLs, [c_strFileGenesPEP, c_strProgGenes2GeneLs], rn )
+		pE.Command( c_strFileGeneLsGZ, c_strFileGeneLs, crn( "gzip -c" ) )
+	
+		def funcTaxPC( target, source, env ):
+			
+			strT, astrSs = ts( target, source )
+			strPattern = "*_pathway.list"
+			iRet = 0
+			if not glob.glob( c_strDirData + "/" + strPattern ):
+				iRet = ex( "cd " + c_strDirData + " && " +
+					"lftp -c mget " + c_strURLKEGG + "/genes/organisms/*/" + strPattern )
+			return ( iRet or ex( out( " ".join( (astrSs[0], c_strDirData + "/" + strPattern) ),
+				strT ) ) )
+		pE.Command( c_strFileTaxPC, [c_strProgPaths2TaxPC], funcTaxPC )
+	else:
+		for (strOut, strIn) in ((c_strFileGeneLs, c_strFileGeneLsGZ), (c_strFileKOC, c_strFileKOCGZ)):
+			pE.Command( strOut, strIn, crn( "cat" ) )
 	
 #===============================================================================
 # MetaCyc
