@@ -25,10 +25,18 @@ for strLine in sys.stdin:
 	if astrEntry and fDefinition:
 		mtch = re.search( r'^(?:DEFINITION)?\s+(.+)$', strLine )
 		if not mtch:
+			if fPathways:
+				i = 0
+				while ( i + 1 ) < len( astrEntry ):
+					if astrEntry[i] and ( "(,|+-".find( astrEntry[i][-1] ) >= 0 ):
+						astrEntry[i] += astrEntry[i + 1]
+						del astrEntry[i + 1]
+						i -= 1
+					i += 1
 			print( "\t".join( filter( lambda s: s, astrEntry ) ) )
 			fDefinition = astrEntry = None
 			continue
-		for strToken in mtch.group( 1 ).split( " " ):
+		for strToken in re.split( r'\s+', mtch.group( 1 ) ):
 			strToken = strToken.strip( )
 			if strToken == "--":
 				continue

@@ -10,7 +10,7 @@ This directory contains a mini-project for automatically constructing one or mor
 
 ***PLEASE NOTE*** that this is not as "pretty" a pipeline as HUMAnN (such as it is), and there are some order dependencies; please follow these steps carefully:
 
-1. Like the rest of HUMAnN, several files are downloaded (KEGG genomes, MAQ, etc.) during the build; an Internet connection is required.
+1. Like the rest of HUMAnN, this project was originally created assuming public availability of KEGG; this is no longer the case.  A "frozen" evaluation can still be executed as long as an Internet connection is available (to download MAQ etc.), but KEGG genome information can no longer be automatically downloaded.  This will cause builds to fail unless appropriate input files from KEGG are provided manually.  Please contact us if this is an insurmountable issue.
 
 2. In order to build simulated sequencing reads from reference genomes, the pipeline uses a MAQ read error model.  By default, the pipeline will look for a .fa/.qual file pair named "s_1_1_export.fa" and "s_1_1_export.fa.qual" in the input directory from which to build this model.  For obvious reasons, only small demo files are provided with the HUMAnN distribution; please replace these with an appropriate .fa/.qual pair (or .fastq) if you'd like to build a more realistic error model.
 

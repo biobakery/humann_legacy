@@ -6,7 +6,7 @@ import sys
 
 def funcInvSimp( adData ):
 	
-	return ( 1.0 / sum( ( d * d ) for d in adData ) )
+	return ( 1.0 / ( sum( ( d * d ) for d in adData ) or 1 ) )
 
 def funcShan( adData ):
 	
