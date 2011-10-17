@@ -6,6 +6,12 @@ funcAcc <- function( adX, adY ) {
 		return( 0 ) }
 	return( cor( adX, adY ) ) }
 
+funcTrans <- function( adX ) {
+	
+	if( is.null( adX ) ) {
+		return( 0 ) }
+	return( asin( sqrt( adX ) ) ) }
+
 funcClean <- function( frmeData, lsPathways = list() ) {
 	iCol <- 2
 
@@ -72,19 +78,69 @@ funcPlotTicklabels <- function( adX, astrCom, dMin ) {
 		text( adX[aiTargets], dMin * 0.999, astrCom[aiTargets], xpd = TRUE, srt = -45, adj = 0, font = 2 ) } }
 
 funcPlotAbd <- function( adRMSE, astrCom, strTitle ) {
-
+	
 	afRMSE <- adRMSE > 0
 	adRMSE <- adRMSE[afRMSE]
 	astrCom <- astrCom[afRMSE]
 	if( !length( adRMSE ) ) {
 		adRMSE <- c(0)
 		astrCom <- c("") }
-
-	par( mar = c(10, 4, 3, 2.75) + 0.1 )
-	dMin <- min( adRMSE ) * 0.99
-	adX <- barplot( adRMSE, ylim = c(dMin, max( adRMSE ) * 1.01), xpd = FALSE,
-		ylab = "Correlation", main = sprintf( "%s Abundance", strTitle ) )
+	
+	dMin <- min( adRMSE, na.rm = TRUE ) * 0.99
+	adX <- barplot( adRMSE, ylim = c(dMin, max( adRMSE, na.rm = TRUE ) * 1.01), xpd = FALSE,
+		ylab = "Correlation", main = sprintf( "Abundance (%s, asin sqrt)", strTitle ) )
 	funcPlotTicklabels( adX, astrCom, dMin ) }
+
+funcPlotBox <- function( adRMSE, astrCom, strUnits ) {
+
+	aiRMSE <- setdiff( which( adRMSE > 0 ), grep( "^\\s+\\-", astrCom ) )
+	adRMSE <- adRMSE[aiRMSE]
+	astrCom <- astrCom[aiRMSE]
+	
+	astrFactors <- c()
+	astrPrefixes <- c()
+	for( strCom in astrCom ) {
+		astrCur <- strsplit( sub( "^\\s+", "", strCom ), " " )[[1]]
+		astrPrefixes <- c(astrPrefixes, astrCur[1])
+		for( strCur in astrCur[2:length( astrCur )] ) {
+			if( substr( strCur, 1, 1 ) == "+" ) {
+				astrFactors <- c(astrFactors, strCur) } } }
+	astrFactors <- unique( astrFactors )
+	astrPrefixes <- unique( astrPrefixes )
+	
+	adPrefixes <- c()
+	for( strPrefix in astrPrefixes ) {
+		aiPrefix <- grep( paste( "^\\s+", strPrefix, sep = "" ), astrCom )
+		adPrefixes <- c(adPrefixes, mean( adRMSE[aiPrefix] )) }
+	
+	adX <- c()
+	astrNames <- c()
+	lsBoxes <- list()
+	for( strFactor in sort( astrFactors ) ) {
+		aiFactor <- grep( paste( "\\", strFactor, "\\b", sep = "" ), astrCom )
+		if( !length( aiFactor ) || ( length( aiFactor ) == length( adRMSE ) ) ) {
+			next }
+		
+		aiMinus <- setdiff( 1:length( adRMSE ), aiFactor )
+		adPlus <- c()
+		adMinus <- c()
+		for( iPrefix in 1:length( astrPrefixes ) ) {
+			aiPrefix <- grep( paste( "^\\s+", astrPrefixes[iPrefix], sep = "" ), astrCom )
+			adPlus <- c(adPlus, adRMSE[intersect( aiFactor, aiPrefix )] - adPrefixes[iPrefix])
+			adMinus <- c(adMinus, adRMSE[intersect( aiMinus, aiPrefix )] - adPrefixes[iPrefix]) }
+		
+		i <- length( lsBoxes )
+		lsBoxes[[i + 1]] <- adMinus
+		lsBoxes[[i + 2]] <- adPlus
+		astrNames <- c(astrNames, sub( "^\\+", "-", strFactor ), strFactor)
+		if( length( adX ) ) {
+			dX <- adX[length( adX )]
+			adX <- c(adX, dX + 2, dX + 3) }
+		else {
+			adX <- 1:2 } }
+
+	boxplot( lsBoxes, at = adX, notch = TRUE, names = astrNames, xlim = c(min( adX ) - 1, max( adX ) + 1),
+		ylab = sprintf( "Difference of %s", strUnits ), cex.axis = 0.9 ) }
 
 funcPerfs <- function( lsPred ) {
 
@@ -115,8 +171,9 @@ funcPlotCovAUC <- function( lsPred, astrCom, strTitle ) {
 	
 	dMin <- min( adAUC ) * 0.99
 	adX <- barplot( adAUC, ylim = c(dMin, max( adAUC ) * 1.01), xpd = FALSE,
-		ylab = "pAUC", main = sprintf( "%s Coverage (pAUC %g)", strTitle, c_dFPR ) )
-	funcPlotTicklabels( adX, astrCom, dMin ) }
+		ylab = "pAUC", main = sprintf( "Coverage (%s, pAUC %g)", strTitle, c_dFPR ) )
+	funcPlotTicklabels( adX, astrCom, dMin )
+	return( list(adAUC = adAUC, astrCom = astrCom) ) }
 
 funcBase <- function( lsData, astrIn = c(), astrOut = c() ) {
 
@@ -171,7 +228,7 @@ funcBase <- function( lsData, astrIn = c(), astrOut = c() ) {
 		strName <- sub( "^(.{3}\\..{3}).wbl", "\\1 +SmWB", strName )
 		strName <- sub( "^(.{3}\\..{3}).nve", "\\1 +Sm", strName )
 		strName <- sub( "^(.{3}\\..{3}).nul", "\\1 -Sm", strName )
-		strName <- sub( "^(.{3})\\.cop", "\\1 +TaxC#", strName )
+		strName <- sub( "^(.{3})\\.cop", "\\1 +TaxC", strName )
 		strName <- sub( "^(.{3})\\.nve", "\\1 +Tax", strName )
 		strName <- sub( "^(.{3})\\.nul", "\\1 -Tax", strName )
 		strName <- sub( "^mpm", " Mod. +MP", strName )
@@ -193,7 +250,9 @@ funcBase <- function( lsData, astrIn = c(), astrOut = c() ) {
 			aiCov <- grep( "^(M|K)[0-9]+$", astrPCov ) }
 		
 		if( ( strCom %in% colnames( frmeAbd ) ) && ( max( adGSAbd[aiAbd] ) > 0 ) ) {
-			dCur <- funcAcc( adGSAbd[aiAbd] / sum( adGSAbd[aiAbd] ), frmeAbd[aiAbd, strCom] )
+			adX <- funcTrans( adGSAbd[aiAbd] / sum( adGSAbd[aiAbd] ) )
+			adY <- funcTrans( frmeAbd[aiAbd, strCom] )
+			dCur <- funcAcc( adX, adY )
 		} else {
 			dCur <- 0 }
 		adRMSE <- c(adRMSE, dCur)
@@ -264,21 +323,29 @@ funcRun <- function( astrFiles, strOutput ) {
 			strTitle <- sprintf( "%s %s", strTitle, "HC" ) }
 		if( length( grep( "lc", strBase ) ) ) {
 			strTitle <- sprintf( "%s %s", strTitle, "LC" ) }
+		if( nchar( strTitle ) ) {
+			strTitle <- substr( strTitle, 2, nchar( strTitle ) ) }
 		
 		if( i == 1 ) {
 			iTypes <- min( 5000, max( ncol( lsCur$abd ), ncol( lsCur$cov ) ) - 1 )
 			if( !is.finite( iTypes ) ) {
 				iTypes <- 0 }
 			iWidth <- 1 + ( iTypes / 30 )
+			iWidth <- 2 * iWidth * c_iWidth
+			iHeight <- c_iHeight * 2 * length( lsFiles )
 			if( fPDF ) {
-				pdf( strOutput, width = 2 * iWidth * c_iWidth, height = c_iHeight * length( lsFiles ) )
+				pdf( strOutput, width = iWidth, height = iHeight )
 			} else {
-				png( strOutput, units = "in", res = 160, width = 2 * iWidth * c_iWidth, height = c_iHeight * length( lsFiles ) ) }
-			par( mfrow = c(length( lsFiles ), 2) ) }
+				png( strOutput, units = "in", res = 160, width = iWidth, height = iHeight ) }
+			par( mfrow = c(2 * length( lsFiles ), 2) ) }
 
 		lsBase <- funcBase( lsCur )
+		par( mar = c(10, 4, 3, 2.75) + 0.1 )
 		funcPlotAbd( lsBase$rmse, lsBase$names, strTitle )
-		funcPlotCovAUC( lsBase$pred, lsBase$names, strTitle ) }
+		lsAUCs <- funcPlotCovAUC( lsBase$pred, lsBase$names, strTitle )
+		par( mar = c(3, 4, 1, 1) + 0.1 )
+		funcPlotBox( lsBase$rmse, lsBase$names, "Correlation" )
+		funcPlotBox( lsAUCs$adAUC, lsAUCs$astrCom, "pAUC" ) }
 	if( dev.cur( ) != 1 ) {
 		dev.off( ) } }
 
@@ -295,7 +362,7 @@ c_iWidth		<- 4
 c_iHeight		<- 3
 c_dFPR			<- 0.1
 c_iSize			<- 6
-c_strTarget		<- " \\+MP \\+TaxC# -Sm \\+GF$"
+c_strTarget		<- " \\+MP \\+TaxC -Sm \\+GF$"
 
 strOutput		<- "output/mocks.pdf"
 astrFiles		<- c("output/mock_stg_hc_04a.txt", "output/mock_stg_hc_04b.txt")

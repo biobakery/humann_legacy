@@ -260,7 +260,7 @@ Pathway coverage calculated as fraction of genes in pathway at or above global m
 ----
 Pathway abundance calculated as average abundance of the most abundant half of genes in the pathway.
 
-NOTES
+NOTES/TROUBLESHOOTING
 ====
 
 KEGG
@@ -279,6 +279,10 @@ def funcUntarMAQ( target, source, env ):
     return 0
 
 Note that the synthetic metagenomes are an optional component not needed for normal HUMAnN operation.
+
+Filename restrictions
+----
+Please do not provide HUMAnN with any input files including _ followed by a digit, e.g. "file_123.txt" or "an_00_example".  HUMAnN uses filename tags of this form to indicate output from each of its processing stages (as described above), and input files that include such patterns should be renamed before HUMAnN execution.
 
 VERSION HISTORY
 ====
@@ -326,3 +330,8 @@ v0.96, 07-28-11
 * Fix a typo in module2modulec.py formatting (thanks to Kathryn Iverson!)
 * Fix a typo in eco.py for overly sparse input files (thanks to Jeffrey Werner!)
 * Work around Mac OS X zcat issues (thanks to Jeffrey Werner!)
+
+v0.97, 10-17-11
+----
+* Add several internal evaluation pipelines in response to initial reviews
+* Fix hits2*.py handling of zero/very small e-values (thanks to Fah Sathira!)

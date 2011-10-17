@@ -1,3 +1,4 @@
+library( gplots )
 library( ROCR )
 
 funcAcc <- function( adX, adY ) {
@@ -5,6 +6,12 @@ funcAcc <- function( adX, adY ) {
 	if( is.null( adX ) || is.null( adY ) ) {
 		return( 0 ) }
 	return( cor( adX, adY ) ) }
+
+funcTrans <- function( adX ) {
+
+	if( is.null( adX ) ) {
+		return( 0 ) }
+	return( asin( sqrt( adX ) ) ) }
 
 funcClean <- function( frmeData ) {
 	iCol <- 2
@@ -58,7 +65,7 @@ funcPlotAbd <- function( adRMSE, astrCom, strTitle ) {
 
 	dMin <- min( adRMSE ) * 0.99
 	adX <- barplot( adRMSE, ylim = c(dMin, max( adRMSE ) * 1.01), xpd = FALSE,
-		ylab = "Correlation", main = sprintf( "Abundance (%s)", strTitle ) )
+		ylab = "Correlation", main = sprintf( "Abundance (%s, asin sqrt)", strTitle ) )
 	text( adX, dMin * 0.995, astrCom, xpd = TRUE, srt = -45, adj = 0 ) }
 
 funcPerfs <- function( lsPred ) {
@@ -175,6 +182,9 @@ funcBase <- function( lsData, astrIn = c(), astrOut = c() ) {
 		strName <- sub( "mpm", "Mod.", strName )
 		strName <- sub( "mpt", "Path", strName )
 		strName <- sub( "keg", "KOs", strName )
+		strName <- sub( "ksb", "KOs, bitscore", strName )
+		strName <- sub( "kie", "KOs, inv. E", strName )
+		strName <- sub( "ksg", "KOs, sigm. E", strName )
 		strName <- sub( ".nul.((nve)|(nul))(.xpe)?$", "", strName )
 		strName <- sub( "nve.nve.nul.nul.nul$", "-All BBH", strName )
 		strName <- sub( "nve$", "BBH", strName )
@@ -186,7 +196,9 @@ funcBase <- function( lsData, astrIn = c(), astrOut = c() ) {
 		aiCov <- which( apply( t(astrPCov), 2, function( s ) { return( funcGrepRow( strCom, s ) ) } ) )
 		
 		if( ( strCom %in% colnames( frmeAbd ) ) && ( max( adGSAbd[aiAbd] ) > 0 ) ) {
-			dCur <- funcAcc( adGSAbd[aiAbd] / sum( adGSAbd[aiAbd] ), frmeAbd[aiAbd, strCom] )
+			adX <- funcTrans( adGSAbd[aiAbd] / sum( adGSAbd[aiAbd] ) )
+			adY <- funcTrans( frmeAbd[aiAbd, strCom] )
+			dCur <- funcAcc( adX, adY )
 		} else {
 			dCur <- 0 }
 		adRMSE <- c(adRMSE, dCur)
@@ -215,6 +227,16 @@ funcScatter <- function( lsData, strTarget, strName ) {
 	strBase <- colnames( frmeAbd )[1]
 	adGSAbd <- frmeAbd[aiPaths, strBase] / max( 1e-10, sum( frmeAbd[aiPaths, strBase] ) )
 	adX <- frmeAbd[aiPaths, strTarget]
+	if( is.null( adGSAbd ) || is.null( adX ) ) {
+		adGSAbd <- NULL
+		adX <- NULL }
+	else {
+		adGSAbd <- funcTrans( adGSAbd )
+		adX <- funcTrans( adX )
+		afNA <- is.na( adGSAbd ) | is.na( adX )
+		adGSAbd <- adGSAbd[!afNA]
+		adX <- adX[!afNA] }
+
 	ad <- c(adX, adGSAbd)
 	if( length( adX ) ) {
 		dMin <- min( ad )
@@ -224,9 +246,24 @@ funcScatter <- function( lsData, strTarget, strName ) {
 		dMin <- 0
 		dMax <- 0 }
 	adLim <- c(0.99 * dMin, 1.01 * dMax)
-	plot( adX, adGSAbd, xlim = adLim, ylim = adLim, xlab = sprintf( "Predicted (r = %0.4f)",
+	if( length( adX ) > 1000 ) {
+		func <- sunflowerplot
+		lsHist <- hist2d( adX, adGSAbd, nbins = 20, show = FALSE )
+		adCounts <- as.numeric( lsHist$counts )
+		adCounts <- sapply( adCounts, function( d ) { min( d, 25 ) } )
+		adPY <- c()
+		for( i in 1:length( lsHist$y ) ) {
+			adPY <- c(adPY, rep( lsHist$y[i], length( lsHist$x ) )) }
+		adPX <- rep( lsHist$x, length( lsHist$y ) ) }
+	else {
+		func <- plot
+		adPX <- adX
+		adPY <- adGSAbd
+		adCounts <- NULL }
+	func( adPX, adPY, xlim = adLim, ylim = adLim, xlab = sprintf( "Predicted (r = %0.4f)",
 		funcAcc( adX, adGSAbd ) ), ylab = "Actual", pch = "o",
-		main = sprintf( "Abundance (%s)", strName ) )
+		number = adCounts, seg.col = "black", size = 0.03, seg.lwd = 0.8,
+		main = sprintf( "Abd. (%s, asin sqrt)", strName ) )
 	if( length( adX ) ) {
 		lmod <- lm( adGSAbd ~ adX )
 		abline( reg = lmod )

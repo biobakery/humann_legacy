@@ -2,13 +2,35 @@
 
 import hits
 import math
+import re
 import sys
 
+c_strWeightPValue	= "pvalue"
+c_strWeightBitScore	= "bitscore"
+c_strWeightInvE		= "inve"
+c_strWeightSigmoid	= "sigmoid"
+c_strWeight			= c_strWeightPValue
+c_dEpsilon			= 1e-20
+
+def funcWeight( dValue, strWeight ):
+	
+	dRet = dValue
+	if strWeight == c_strWeightPValue:
+		dRet = math.exp( -dValue )
+	elif strWeight == c_strWeightBitScore:
+		dRet = max( c_dEpsilon, -math.log( max( c_dEpsilon, dValue ) ) )
+	elif strWeight == c_strWeightInvE:
+		dRet = 1.0 / max( c_dEpsilon, dValue )
+	else:
+		dRet = 1.0 / ( 1 + math.exp( dValue ) )
+	return dRet
+
 if len( sys.argv ) < 2:
-	raise Exception( "Usage: hits2enzymes.py <koc> [genels] [topn] < <hits.bin>" )
+	raise Exception( "Usage: hits2enzymes.py <koc> [genels] [topn] [weight] < <hits.bin>" )
 strKOC = sys.argv[1]
 strGeneLs = None if ( len( sys.argv ) <= 2 ) else sys.argv[2]
 iTopN = -1 if ( len( sys.argv ) <= 3 ) else int(sys.argv[3])
+strWeight = c_strWeight if ( len( sys.argv ) <= 4 ) else sys.argv[4]
 
 hashGeneLs = {}
 if strGeneLs:
@@ -49,9 +71,9 @@ for iFrom in range( pHits.get_froms( ) ):
 # Keep only hits that correspond to at least one KO
 	aiScores = filter( lambda i: hashCOK.get( pHits.get_to(
 		pHits.get_scoreto( i ) ).upper( ).replace( ":", "#", 1 ) ), aiScores )
-	astrTos = [pHits.get_to( pHits.get_scoreto( i ) ) for i in aiScores]
-	adScores = [math.exp( -pHits.get_dic( i )[0] ) for i in aiScores]
-	dSum = sum( adScores )
+	astrTos = [re.sub( r'\s+.*$', "", pHits.get_to( pHits.get_scoreto( i ) ) ) for i in aiScores]
+	adScores = [funcWeight( pHits.get_dic( i )[0], strWeight ) for i in aiScores]
+	dSum = max( c_dEpsilon, sum( adScores ) )
 	for i in range( len( astrTos ) ):
 		strTo, dCur = (a[i] for a in (astrTos, adScores))
 		dCur /= hashGeneLs.get( strTo, 1 )

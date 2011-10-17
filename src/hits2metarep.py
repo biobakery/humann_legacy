@@ -3,6 +3,7 @@
 import array
 import hits
 import math
+import re
 import sys
 
 def median( ad ):
@@ -44,8 +45,10 @@ for iFrom in range( pHits.get_froms( ) ):
 	dSum = sum( math.exp( -a[0] ) for a in aadScores )
 	for i in range( len( aiScores ) ):
 		iTo, adCur = (a[i] for a in (aiTos, aadScores))
-		dScore = math.exp( -adCur[0] ) / hashGeneLs.get( pHits.get_to( iTo ), 1 )
-		pAbundances[iTo] += dScore / dSum
+		strTo = pHits.get_to( iTo )
+		strTo = re.sub( r'\s+.*$', "", strTo )
+		dScore = math.exp( -adCur[0] ) / hashGeneLs.get( strTo, 1 )
+		pAbundances[iTo] += dScore / ( dSum or 1 )
 		apScores[iTo].append( aiScores[i] )
 
 for iTo in range( len( pAbundances ) ):

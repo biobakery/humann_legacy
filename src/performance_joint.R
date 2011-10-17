@@ -136,6 +136,7 @@ funcBase <- function( lsData, astrTargets ) {
 
 funcScatter <- function( lsData, astrNames, astrTargets ) {
 	c_aChars	<- c(20, 4, 1:5)
+	c_strColor	<- "#00000066"
 	
 	for( iTarget in 1:length( astrTargets ) ) {
 		frmeAbd <- lsData$abd
@@ -152,6 +153,8 @@ funcScatter <- function( lsData, astrNames, astrTargets ) {
 		strBase <- colnames( frmeAbd )[1]
 		adGSAbd <- frmeAbd[astrPaths, strBase] / max( 1e-10, sum( frmeAbd[astrPaths, strBase] ) )
 		adX <- frmeAbd[astrPaths, strTarget]
+		adGSAbd <- asin( sqrt( adGSAbd ) )
+		adX <-asin( sqrt( adX ) ) 
 		ad <- c(adX, adGSAbd)
 		if( iTarget == 1 ) {
 			if( length( adX ) ) {
@@ -163,18 +166,18 @@ funcScatter <- function( lsData, astrNames, astrTargets ) {
 				dMax <- 0 }
 			adLim <- c(0.99 * dMin, 1.01 * dMax)
 			plot( adX, adGSAbd, xlim = adLim, ylim = adLim, xlab = "Predicted", ylab = "Actual",
-				main = "Relative Abundance", pch = c_aChars[iTarget] )
+				main = "Relative Abundance (asin sqrt)", pch = c_aChars[iTarget], col = c_strColor )
 		} else {
-			points( adX, adGSAbd, pch = c_aChars[iTarget] ) }
+			points( adX, adGSAbd, pch = c_aChars[iTarget], col = c_strColor ) }
 		if( length( adX ) ) {
 			lmod <- lm( adGSAbd ~ adX )
 			abline( reg = lmod )
-			dX <- 0.6 * dMax
+			dX <- 0.72 * dMax
 			dY <- predict( lmod, data.frame( adX = dX ) )
 			dR <- sprintf( "%0.2f", funcAcc( adX, adGSAbd ) )
-			text( dX, dY, bquote( rho == .(dR) ), pos = 4, offset = 0.67 ) } }
+			text( dX, dY, bquote( rho == .(dR) ), pos = 4, offset = 0.75 ) } }
 	abline( 0, 1, lwd = 2 )
-	legend( "bottomright", astrNames, bg = "white", pch = c_aChars[1:length( astrNames )] )
+	legend( "bottomright", astrNames, bg = "white", pch = c_aChars[1:length( astrNames )], col = "#000000FE" )
 }
 	
 funcSAUC <- function( lsData, astrNames, astrTargets ) {

@@ -38,6 +38,8 @@ c_strVersionMetaCyc			= "14.6"
 # Optional: Generate synthetic community performance descriptors
 # Note: Should build synthetic communities in the "synth" subdirectory if enabled
 c_fMocks					= True
+# Enable testing of alternative BLAST hit weighting methods (slight increases processing)
+c_fWeightEval				= False
 # Enable extensive parameter testing (greatly increases processing!)
 c_fParameterEval			= False
 
@@ -132,6 +134,14 @@ c_apProcessors				= [
 		[c_strFileKOC, c_strFileGeneLs] ),
 	CProcessor( "00",	"01n",	"nve",	c_strProgHits2Enzymes,
 		[c_strFileKOC, c_strFileGeneLs],	["1"] ),
+	] + ( [
+	CProcessor( "00",	"01",	"ksb",	c_strProgHits2Enzymes,
+		[c_strFileKOC, c_strFileGeneLs],	["20", "bitscore"] ),
+	CProcessor( "00",	"01",	"kie",	c_strProgHits2Enzymes,
+		[c_strFileKOC, c_strFileGeneLs],	["20", "inve"] ),
+	CProcessor( "00",	"01",	"ksg",	c_strProgHits2Enzymes,
+		[c_strFileKOC, c_strFileGeneLs],	["20", "sigmoid"] ),
+	] if c_fWeightEval else [] ) + [
 #	CProcessor( "00",	"11",	"mtc",	c_strProgHits2Metacyc,
 #		[c_strFileMCC] ),
 #===============================================================================
