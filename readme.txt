@@ -335,3 +335,7 @@ v0.97, 10-17-11
 ----
 * Add several internal evaluation pipelines in response to initial reviews
 * Fix hits2*.py handling of zero/very small e-values (thanks to Fah Sathira!)
+
+v0.971, 10-17-11
+----
+* Fix missing exclude.py (thanks to Brandi Cantarel!)
