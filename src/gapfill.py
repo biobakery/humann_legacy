@@ -2,7 +2,7 @@
 
 import sys
 
-c_dIQRs		= 0
+c_dIQRs		= 1.5
 c_fMedian	= True
 
 if len( sys.argv ) < 2:
@@ -38,10 +38,10 @@ for strKEGG, hashKOs in hashScores.items( ):
 		dStd = ( ( dStd / ( len( adAbs ) - 1 ) ) - ( dAve * dAve ) )**0.5
 		if fMedian:
 			dLF = d50 - ( dIQRs * dIQR )
-			dFill = d50
+			dFill = dLF
 		else:
 			dLF = dAve - ( dIQRs * dStd )
-			dFill = dAve
+			dFill = dLF
 
 		for strKO, dAb in hashKOs.items( ):
 			if dAb < dLF:

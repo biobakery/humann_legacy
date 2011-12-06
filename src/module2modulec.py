@@ -33,6 +33,8 @@ for strLine in sys.stdin:
 						del astrEntry[i + 1]
 						i -= 1
 					i += 1
+			else:
+				astrEntry = [astrEntry[0]] + list(set(astrEntry[1:]))
 			print( "\t".join( filter( lambda s: s, astrEntry ) ) )
 			fDefinition = astrEntry = None
 			continue

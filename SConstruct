@@ -33,7 +33,7 @@ c_strInputMetadata			= c_strDirInput + "/hmp_metadata.dat"
 # Filename from which column names to remove are read; can be excluded (see below)
 c_strInputExclude			= c_strDirInput + "/hmp_exclude.dat"
 # Optional: MetaCyc distribution tarball, will be used for pathways if present
-c_strInputMetaCyc			= c_strDirInput + "/meta.tar.gz"
+c_strInputMetaCyc			= "" # c_strDirInput + "/meta.tar.gz"
 c_strVersionMetaCyc			= "14.6"
 # Optional: Generate synthetic community performance descriptors
 # Note: Should build synthetic communities in the "synth" subdirectory if enabled
@@ -42,6 +42,8 @@ c_fMocks					= True
 c_fWeightEval				= False
 # Enable extensive parameter testing (greatly increases processing!)
 c_fParameterEval			= False
+# Perform a set of additional synthetic community evaluations
+c_fResponseEval				= False
 
 # Filename into which all processing steps are logged for provenance tracking
 logging.basicConfig( filename = "provenance.txt", level = logging.INFO,
@@ -265,6 +267,56 @@ c_apProcessors				= [
 		[c_strFilePathwayC],				["\"\"", "0"] ),
 ]
 
+if c_fResponseEval:
+	c_apProcessors				= [
+# Input
+	CProcessor( ".txt.gz",			"00",	"hit",	c_strProgBlast2Hits,
+		[],									["blastx", "0.9"],	True,	True ),
+# Hits -> enzymes
+	CProcessor( "00",	"01",	"kga",	c_strProgHits2Enzymes,
+		[c_strFileKOC, c_strFileGeneLs] ),
+#	CProcessor( "00",	"01",	"kab",	c_strProgHits2Enzymes,
+#		[c_strFileKOC, c_strFileGeneLs],	["100", "bitscore"] ),
+#	CProcessor( "00",	"01",	"kae",	c_strProgHits2Enzymes,
+#		[c_strFileKOC, c_strFileGeneLs],	["100", "inve"] ),
+#	CProcessor( "00",	"01",	"kas",	c_strProgHits2Enzymes,
+#		[c_strFileKOC, c_strFileGeneLs],	["100", "sigmoid"] ),
+	CProcessor( "00",	"01",	"kgo",	c_strProgHits2Enzymes,
+		[c_strFileKOC, c_strFileGeneLs],	["1"] ),
+# Enzymes -> modules
+	CProcessor( "01",	"02a",	"mpm",	c_strProgEnzymes2PathwaysMP,
+		[c_strFileMP, c_strFileModuleC] ),
+#		[c_strFileMP, c_strFileKEGGC] ),	# KEGG pathways instead of modules
+#	CProcessor( "01",	"02a",	"nve",	c_strProgEnzymes2Pathways,
+#		[c_strFileModuleC] ),
+#		[c_strFileKEGGC] ),					# KEGG pathways instead of modules
+# Taxonomic limitation
+	CProcessor( "02a",	"02b",	"nve",	c_strProgTaxlim,
+		[c_strFileTaxPC, c_strFileKOC] ),
+	CProcessor( "02a",	"02b",	"nuc",	c_strProgTaxlim,
+		[c_strFileTaxPC] ),
+	CProcessor( "02a",	"02b",	"nul",	c_strProgCat,
+		[],									["1"] ),
+# Smoothing
+#	CProcessor( "02b",	"03a",	"nul",	c_strProgCat,
+#		[] ),
+#	CProcessor( "02b",	"03a",	"wbl",	c_strProgSmoothWB,
+#		[c_strFilePathwayC] ),
+# Gap filling
+	CProcessor( "02b",	"03b",	"nve",	c_strProgGapfill,
+		[c_strFilePathwayC] ),
+#	CProcessor( "02b",	"03b",	"nul",	c_strProgCat,
+#		[] ),
+# Coverage
+	CProcessor( "03b",	"03d",	"nve",	c_strProgPathCov,
+		[c_strFilePathwayC, c_strFileModuleP] ),
+	CProcessor( "03d",	"04a",	"xpe",	c_strProgPathCovXP,
+		[c_strProgXipe] ),
+# Abundance
+	CProcessor( "03b",	"04b",	"nve",	c_strProgPathAb,
+		[c_strFilePathwayC, c_strFileModuleP] ),
+	]
+
 #===============================================================================
 # A chain of piped finalizers runs on each file produced by the processing
 # pipeline that is _not_ further processed; in other words, the coverage 04a and
@@ -275,7 +327,7 @@ c_apProcessors				= [
 #===============================================================================
 c_aastrFinalizers			= [
 	[None,			c_strProgZero],
-	[None,			c_strProgFilter, 	[c_strFilePathwayC]],
+	[None,			c_strProgFilter, 	[c_strFilePathwayC, c_strFileModuleP]],
 	[None,			c_strProgExclude,	[c_strInputExclude]],
 	["0(1|(4b))",	c_strProgNormalize],
 	[None,			c_strProgEco],

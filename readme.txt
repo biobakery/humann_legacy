@@ -339,3 +339,10 @@ v0.97, 10-17-11
 v0.971, 10-17-11
 ----
 * Fix missing exclude.py (thanks to Brandi Cantarel!)
+
+v0.98, 12-06-11
+----
+* Allow module2modulec.py to remove unusual duplicate enzymes from KEGG's files
+* Allow input filenames to contain underscores
+* Fix module size calculation in filter.py
+* Fix a bug in hits2enzymes.py to allow a wider range of KEGG gene name detection
