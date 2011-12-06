@@ -153,7 +153,7 @@ c_apProcessors				= [
 #===============================================================================
 c_aastrFinalizers			= [
 	[None,			c_strProgZero],
-	[None,			c_strProgFilter, 	[c_strFilePathwayC]],
+	[None,			c_strProgFilter, 	[c_strFilePathwayC, c_strFileModuleP]],
 	["0(1|(4b))",	c_strProgNormalize],
 	[None,			c_strProgEco],
 	[None,			c_strProgMetadata,	[c_strInputMetadata]],

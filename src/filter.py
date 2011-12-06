@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import pathway
 import re
 import sys
 
@@ -9,9 +10,8 @@ astrPaths = sys.argv[1:]
 
 hashPaths = {}
 for strPaths in astrPaths:
-	for strLine in open( strPaths ):
-		astrLine = strLine.strip( ).split( "\t" )
-		hashPaths[astrLine[0]] = len( astrLine ) - 1
+	for pPathway in pathway.open( open( strPaths ) ):
+		hashPaths[pPathway.id( )] = min( pPathway.size( ), hashPaths.get( pPathway.id( ), pPathway.size( ) ) )
 
 fFirst = True
 for strLine in sys.stdin:

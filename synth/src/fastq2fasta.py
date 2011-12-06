@@ -13,4 +13,4 @@ for strLine in sys.stdin:
 		continue
 	astrLines.append( strLine.strip( ) )
 	if ( len( astrLines ) == 2 ) and ( ( not iLen ) or ( len( strLine ) >= iLen ) ):
-		sys.stdout.write( "\n".join( astrLines ) )
+		print( "\n".join( astrLines ) )

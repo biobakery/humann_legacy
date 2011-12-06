@@ -353,7 +353,7 @@ def main( hashVars ):
 					astrNew.append( strTo )
 					pE.Command( strTo, [strFrom] + pProc.deps( ), pProc.ex( ) )
 
-					mtch = re.search( '_(\d{2})([^-]*)', strTo )
+					mtch = re.search( '.*_(\d{2})([^-]*)', strTo )
 					if mtch:
 						for strType in (mtch.group( 1 ), "".join( mtch.groups( ) )):
 							hashTypes.setdefault( strType, set() ).add( strTo )
@@ -363,7 +363,7 @@ def main( hashVars ):
 	
 	hashTo = {}
 	for strTo in astrTo:
-		pMatch = re.search( '_(\d+.*-\S+)' + c_strSuffixOutput + '$', strTo )
+		pMatch = re.search( '.*_(\d+.*?-\S+)' + c_strSuffixOutput + '$', strTo )
 		if pMatch:
 			hashTo.setdefault( pMatch.group( 1 ), [] ).append( strTo )
 

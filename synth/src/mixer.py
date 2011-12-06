@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+#import blist
 import random
 import re
 import sys
@@ -21,8 +22,8 @@ for strReads in astrReads:
 dTotal = 0
 hashStagger = {}
 hashGenomes = {}
-astrReads = []
-astrProvenance = []
+astrReads = [] # blist.blist( [] )
+astrProvenance = [] # blist.blist( [] )
 for strLine in sys.stdin:
 	strLine = strLine.strip( )
 	if strLine[0] == "#":
@@ -38,7 +39,7 @@ for strLine in sys.stdin:
 	for strRLine in open( strReads ):
 		strRLine = strRLine.lstrip( )
 		if strRLine[0] == ">":
-			if len( strRead ) > 0:
+			if len( strRead ) > 2:
 				astrProvenance.append( strID )
 				astrReads.append( strRead.strip( ) )
 			strID = strRLine[1:].strip( )

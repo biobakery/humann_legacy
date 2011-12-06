@@ -68,10 +68,11 @@ for iFrom in range( pHits.get_froms( ) ):
 	if iTopN > 0:
 		aiScores = sorted( aiScores, lambda iOne, iTwo: cmp( pHits.get_dic( iOne )[0], pHits.get_dic( iTwo )[0] ) )
 		aiScores = aiScores[:iTopN]
-# Keep only hits that correspond to at least one KO
-	aiScores = filter( lambda i: hashCOK.get( pHits.get_to(
-		pHits.get_scoreto( i ) ).upper( ).replace( ":", "#", 1 ) ), aiScores )
 	astrTos = [re.sub( r'\s+.*$', "", pHits.get_to( pHits.get_scoreto( i ) ) ) for i in aiScores]
+# Keep only hits that correspond to at least one KO
+	aiTmp = filter( lambda i: hashCOK.get( astrTos[i].upper( ).replace( ":", "#", 1 ) ),
+		range( len( astrTos ) ) )
+	aiScores, astrTos = ([a[i] for i in aiTmp] for a in (aiScores, astrTos))
 	adScores = [funcWeight( pHits.get_dic( i )[0], strWeight ) for i in aiScores]
 	dSum = max( c_dEpsilon, sum( adScores ) )
 	for i in range( len( astrTos ) ):
