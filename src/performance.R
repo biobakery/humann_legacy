@@ -266,7 +266,10 @@ funcScatter <- function( lsData, strTarget, strName ) {
 		main = sprintf( "Abd. (%s, asin sqrt)", strName ) )
 	if( length( adX ) ) {
 		lmod <- lm( adGSAbd ~ adX )
-		abline( reg = lmod )
+		if( adX ){
+			abline( reg = lmod ) }
+		else {
+			abline( ) }
 		abline( 0, 1, lwd = 2 ) } }
 
 funcSAUC <- function( lsData, iCol ) {
@@ -311,7 +314,6 @@ lsData <- funcData( strCoverage, strAbundance )
 iTypes <- min( 5000, max( ncol( lsData$abd ), ncol( lsData$cov ) ) - 1 )
 if( !is.finite( iTypes ) ) {
 	iTypes <- 0 }
-
 fPDF <- length( grep( "\\.pdf$", strOutput ) )
 iWidth <- 1 + ( iTypes / 30 )
 if( fPDF ) {

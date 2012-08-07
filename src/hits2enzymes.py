@@ -4,6 +4,7 @@ import hits
 import math
 import re
 import sys
+import argparse
 
 c_strWeightPValue	= "pvalue"
 c_strWeightBitScore	= "bitscore"
@@ -25,12 +26,13 @@ def funcWeight( dValue, strWeight ):
 		dRet = 1.0 / ( 1 + math.exp( dValue ) )
 	return dRet
 
-if len( sys.argv ) < 2:
-	raise Exception( "Usage: hits2enzymes.py <koc> [genels] [topn] [weight] < <hits.bin>" )
+if len( sys.argv ) < 3:
+	raise Exception( "Usage: hits2enzymes.py <koc> [genels] [org] [orgVal] [topn] [weight] < <hits.bin>" )
 strKOC = sys.argv[1]
 strGeneLs = None if ( len( sys.argv ) <= 2 ) else sys.argv[2]
-iTopN = -1 if ( len( sys.argv ) <= 3 ) else int(sys.argv[3])
-strWeight = c_strWeight if ( len( sys.argv ) <= 4 ) else sys.argv[4]
+fOrg = False if( len( sys.argv ) <= 3 ) else ( sys.argv[3] == "True" ) # TODO use int or something
+iTopN = -1 if ( len( sys.argv ) <= 4 ) else int(sys.argv[4])
+strWeight = c_strWeight if ( len( sys.argv ) <= 5 ) else sys.argv[5]
 
 hashGeneLs = {}
 if strGeneLs:
@@ -61,6 +63,7 @@ pHits = hits.CHits( )
 pHits.open( sys.stdin )
 hashhashOrgs = {}
 hashOrgs = {}
+
 for iFrom in range( pHits.get_froms( ) ):
 	strFrom = pHits.get_from( iFrom )
 	aiScores = pHits.get_scores( iFrom )
@@ -88,19 +91,33 @@ for iFrom in range( pHits.get_froms( ) ):
 astrOrgs = hashhashOrgs.keys( )
 hashScores = {}
 dSum = 0
+
 for strKO, hashKO in hashKOC.items( ):
 	adScores = [0] * len( astrOrgs )
 	for i in range( len( adScores ) ):
 		strOrg = astrOrgs[i]
 		for strGene in hashKO.get( strOrg, set() ):
 			adScores[i] += hashhashOrgs.get( strOrg, {} ).get( strGene, 0 )
-	dScore = sum( adScores )
-	if dScore > 0:
-		hashScores[strKO] = dScore
-		dSum += dScore
+		if ( ( adScores[i] > 0 ) and ( fOrg ) ):
+			strOrgKO = ":".join( [ astrOrgs[i], strKO ] )
+			hashScores[strOrgKO] = adScores[i]
+		dSum += adScores[i]
+	if not fOrg:
+		dScore = sum( adScores )
+		if dScore > 0:
+			hashScores[strKO] = dScore
+			dSum += dScore
 
-print( "GID	Abundance" )
+sys.stdout.write( "GID	" )
+if fOrg:
+	sys.stdout.write( "Organism	" )
+print( "Abundance" )
 for strOrg, dScore in hashOrgs.items( ):
 	print( "\t".join( ("#", strOrg, "%g" % dScore) ) )
-for strKO, dScore in hashScores.items( ):
-	print( "\t".join( (strKO, "%g" % dScore) ) ) # / dSum)) ) )
+if fOrg:
+	for strKO, dScore in hashScores.items( ):
+		strOrg, strGene = strKO.split( ":" )
+		print( "\t".join( (strGene, strOrg, "%g" % dScore) ) ) # / dSum)) ) )
+else:
+	for strKO, dScore in hashScores.items( ):
+		print( "\t".join( (strKO, "%g" % dScore) ) ) # / dSum)) ) )

@@ -14,38 +14,47 @@ dPerc = float(sys.argv[2]) if ( len( sys.argv ) > 2 ) else c_dPerc
 dProb = float(sys.argv[3]) if ( len( sys.argv ) > 3 ) else c_dProb
 
 hashPaths = {}
+hashhashPaths = {}
 for strLine in sys.stdin:
-	strPath, strCov = strLine.strip( ).split( "\t" )
-	if strPath == "PID":
-		continue
-	hashPaths[strPath] = float(strCov)
-procXipe = subprocess.Popen( [strXipe, "--file2", str(dPerc)], stdin = subprocess.PIPE,
-	stdout = subprocess.PIPE, stderr = subprocess.PIPE )
-strOut, strErr = procXipe.communicate( "\n".join( "\t".join( str(strCur) for strCur in astrCur )
-	for astrCur in hashPaths.items( ) ) )
-
-setBad = set()
-for strLine in strErr.split( "\n" ):
 	astrLine = strLine.strip( ).split( "\t" )
-	if len( astrLine ) < 2:
+	if astrLine[0] == "PID":
+		fOrg = len( astrLine ) > 2
 		continue
-	strMsg, strKey = astrLine
-	setBad.add( strKey )
-for strLine in strOut.split( "\n" ):
-	astrLine = strLine.strip( ).split( "\t" )
-	if len( astrLine ) < 2:
-		continue
-	strKey, strTuple = astrLine
-	if strKey not in setBad:
-		continue
-	strScore, strBin = strTuple[1:-1].split( ", " )
-	if ( float(strScore) >= dProb ) and ( int(strBin) == 1 ):
-		setBad.remove( strKey )
-sys.stderr.write( "Removing: %s\n" % setBad )
-for strPath in setBad:
-	hashPaths[strPath] = 0
+	hashhashPaths.setdefault( astrLine[1] if fOrg else None, {} )[astrLine[0]] = float( astrLine[2] ) if fOrg else float( astrLine[1] )
+sys.stdout.write( "PID	" )
+if fOrg:
+	sys.stdout.write( "Organism	" )
+print( "Coverage" )
+for strOrg, hashPaths in hashhashPaths.items( ):
+	procXipe = subprocess.Popen( [strXipe, "--file2", str(dPerc)], stdin = subprocess.PIPE,
+		stdout = subprocess.PIPE, stderr = subprocess.PIPE )
+	strOut, strErr = procXipe.communicate( "\n".join( "\t".join( str(strCur) for strCur in astrCur )
+		for astrCur in hashPaths.items( ) ) )
 
-print( "PID	Coverage" )
-for strPath, dCov in hashPaths.items( ):
-	if dCov:
-		print( "\t".join( (strPath, "%g" % dCov) ) )
+	setBad = set()
+	for strLine in strErr.split( "\n" ):
+		astrLine = strLine.strip( ).split( "\t" )
+		if len( astrLine ) < 2:
+			continue
+		strMsg, strKey = astrLine
+		setBad.add( strKey )
+	for strLine in strOut.split( "\n" ):
+		astrLine = strLine.strip( ).split( "\t" )
+		if len( astrLine ) < 2:
+			continue
+		strKey, strTuple = astrLine
+		if strKey not in setBad:
+			continue
+		strScore, strBin = strTuple[1:-1].split( ", " )
+		if ( float(strScore) >= dProb ) and ( int(strBin) == 1 ):
+			setBad.remove( strKey )
+	sys.stderr.write( "Removing: %s\n" % setBad )
+	for strPath in setBad:
+		hashPaths[strPath] = 0
+
+	for strPath, dCov in hashPaths.items( ):
+		if dCov:
+			if fOrg:
+				print( "\t".join( (strPath, strOrg, "%g" % dCov) ) )
+			else:
+				print( "\t".join( (strPath, "%g" % dCov) ) )

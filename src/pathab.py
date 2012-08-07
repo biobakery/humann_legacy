@@ -24,33 +24,47 @@ if strModuleP:
 		hashModules[pPathway.id( )] = pPathway
 
 hashKOs = {}
-hashScores = {}
+hashhashScores = {}
 for strLine in sys.stdin:
 	strLine = strLine.strip( )
 	astrLine = strLine.split( "\t" )
 	if astrLine[0] == "GID":
+		fOrg = len( astrLine ) > 3
 		continue
-	strKO, strKEGG, strScore = astrLine
-	dScore = float(strScore)
-	hashKOs[strKO] = max( dScore, hashKOs.get( strKO, 0 ) )
-	hashScores.setdefault( strKEGG, {} )[strKO] = dScore
+	if fOrg:
+		dScore = float( astrLine[3] )
+		strKOOrg = "".join( ( astrLine[0],astrLine[1] ) )
+		hashKOs[strKOOrg] = max( dScore, hashKOs.get( strKOOrg, 0 ) )
+		strOrg = astrLine[1]
+	else:
+		dScore = float( astrLine[2] )
+		hashKOs[astrLine[0]] = max( dScore, hashKOs.get( astrLine[0], 0 ) )
+	hashhashScores.setdefault( astrLine[1] if fOrg else None, {} ).setdefault( 
+		astrLine[2] if fOrg else astrLine[1], {} )[astrLine[0]] = dScore
 adScores = sorted( hashKOs.values( ) )
 if len( adScores ) > 2:
 	d25, d50, d75 = (adScores[int(round( 0.25 * ( i + 1 ) * len( adScores ) ))] for i in range( 3 ))
 else:
 	d25, d50, d75 = [adScores[0] if adScores else 0] * 3
-print( "PID	Abundance" )
-for strKEGG, hashKOs in hashScores.items( ):
-	if len( strKEGG ) == 0:
-		continue
-	for strKO in hashKEGGs.get( strKEGG, [] ):
-		hashKOs.setdefault( strKO, 0 )
-	adAbs = sorted( hashKOs.values( ) )
-	pPathway = hashModules.get( strKEGG )
-	if pPathway:
-		dAb = pPathway.abundance( hashKOs, d50 if fCoverage else None )
-	else:
-		if fMedup:
-			adAbs = adAbs[( len( adAbs ) / 2 ):]
-		dAb = sum( adAbs ) / len( adAbs )
-	print( "\t".join( (strKEGG, str(dAb)) ) )
+sys.stdout.write( "PID	" )
+if fOrg:
+	sys.stdout.write( "Organism	" )
+print( "Abundance" )
+for strOrg, hashScores in hashhashScores.items( ):
+	for strKEGG, hashKOs in hashScores.items( ):
+		if len( strKEGG ) == 0:
+			continue
+		for strKO in hashKEGGs.get( strKEGG, [] ):
+			hashKOs.setdefault( strKO, 0 )
+		adAbs = sorted( hashKOs.values( ) )
+		pPathway = hashModules.get( strKEGG )
+		if pPathway:
+			dAb = pPathway.abundance( hashKOs, d50 if fCoverage else None )
+		else:
+			if fMedup:
+				adAbs = adAbs[( len( adAbs ) / 2 ):]
+			dAb = sum( adAbs ) / len( adAbs )
+		if fOrg:
+			print( "\t".join( (strKEGG, strOrg, str(dAb)) ) )
+		else:
+			print( "\t".join( (strKEGG, str(dAb)) ) )

@@ -23,37 +23,45 @@ if strModuleP:
 
 dAve = iAve = 0
 adScores = []
-hashScores = {}
+hashhashScores = {}
 for strLine in sys.stdin:
 	strLine = strLine.strip( )
 	astrLine = strLine.split( "\t" )
 	if astrLine[0] == "GID":
+		fOrg = len( astrLine ) > 3
 		continue
-	dAb = float(astrLine[2])
+	dAb = float( astrLine[3] ) if fOrg else float( astrLine[2] )
+	hashhashScores.setdefault( astrLine[1] if fOrg else None, {} ).setdefault( astrLine[2] if fOrg else astrLine[1], {} )[astrLine[0]] = dAb
 	adScores.append( dAb )
 	dAve += dAb
 	iAve += 1
-	hashScores.setdefault( astrLine[1], {} )[astrLine[0]] = dAb
 if iAve:
 	dAve /= iAve
 adScores.sort( )
 if adScores:
 	dMed = adScores[len( adScores ) / 2] if fMedian else ( sum( adScores ) / len( adScores ) )
-print( "PID	Coverage" )
-for strKEGG, hashKOs in hashScores.items( ):
-	astrKOs = hashKEGGs.get( strKEGG )
-	if astrKOs:
-		for strKO in astrKOs:
-			hashKOs.setdefault( strKO, 0 )
-	if not ( strKEGG and hashKOs ):
-		continue
-	pPathway = hashModules.get( strKEGG )
-	if pPathway:
-		dCov = pPathway.coverage( hashKOs, dMed )
-	else:
-		iHits = 0
-		for strKO, dAb in hashKOs.items( ):
-			if dAb > dMed:
-				iHits += 1
-		dCov = float(iHits) / len( hashKOs )
-	print( "\t".join( (strKEGG, str(dCov)) ) )
+sys.stdout.write( "PID	" )
+if fOrg:
+	sys.stdout.write( "Organism	" )
+print( "Coverage" )
+for strOrg, hashScores in hashhashScores.items( ):
+	for strKEGG, hashKOs in hashScores.items( ):
+		astrKOs = hashKEGGs.get( strKEGG )
+		if astrKOs:
+			for strKO in astrKOs:
+				hashKOs.setdefault( strKO, 0 )
+		if not ( strKEGG and hashKOs ):
+			continue
+		pPathway = hashModules.get( strKEGG )
+		if pPathway:
+			dCov = pPathway.coverage( hashKOs, dMed )
+		else:
+			iHits = 0
+			for strKO, dAb in hashKOs.items( ):
+				if dAb > dMed:
+					iHits += 1
+			dCov = float(iHits) / len( hashKOs )
+		if fOrg:
+			print( "\t".join( (strKEGG, strOrg, str(dCov)) ) )
+		else:
+			print( "\t".join( (strKEGG, str(dCov)) ) )

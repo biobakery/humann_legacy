@@ -73,7 +73,7 @@ http://rocr.bioinf.mpi-sb.mpg.de
 INPUTS
 ====
 
-One or more tabular translated BLAST (blastx) output files matching sequence read IDs to gene IDs.  Place (or symlink) each file with a .txt, .txt.gz, or .txt.bz extension in the "input" directory before running HUMAnN.  The pipeline includes processors for three tab-delimited text formats by default (below) and can easily by modified to accept more.
+One or more tabular translated BLAST (blastx) output files or bowtie output files matching sequence read IDs to gene IDs.  Place (or symlink) each file with a .txt, .txt.gz, .txt.bz, or .bam extension in the "input" directory before running HUMAnN.  The pipeline includes processors for three tab-delimited text formats by default (below) and BAM binary format and can easily by modified to accept more.
 
 As an example, the default inputs provided with HUMAnN were generated using:
   blastx -outfmt 6 -db 28_kegg_genomes < mock_even_lc.fasta.gz | gzip -c > mock_even_lc.txt.gz
@@ -92,6 +92,10 @@ template-name frame read-name template-start template-end template-length read-s
 mblastx
 ----
 Query_Id Reference_Id E_Value_Bit_Score Identity_Percentage_Length_of_HSP Number_of_Positives_Frame_#s Alignment_Start_in_Query Alignment_End_in_Query Alignment_Start_in_Reference Alignment_End_in_Reference
+
+BAM (bowtie/bowtie2)
+----
+qname flag rname pos mapq cigar rnext pnext tlen seq qual
 
 usearch
 ----
@@ -134,6 +138,12 @@ You can reproduce the entire performance evaluation using synthetic communities 
 * By default, four communities are built: two with staggered organismal abundances (stg, using a lognormal distribution) and two with even abundances (even), and two with 20 organisms (low complexity, lc) and two with 100 (high complexity, hc).
 
 * The true gene and pathway abundances/coverages will be placed in correspondingly named files in the "synth/output" directory.  These will be automatically detected the next time HUMAnN is executed using scons.  They will be merged into the overall output files, and if correspondingly named input files ("mock_stg_lc*", "mock_even_hc*", etc.) are available, their performance will be automatically plotted as PDF output files using R.
+
+HUMAnN can also add a level of organism specificity to the output. To do this:
+
+* Turn on the feature by changing c_fOrg to True in SConstruct.
+
+* Run "scons" as you would on your samples without the organism specificity
 
 DETAILED OPERATION
 ====

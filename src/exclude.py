@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# Removes excluded columns
+
 import re
 import sys
 

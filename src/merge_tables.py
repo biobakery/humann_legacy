@@ -9,23 +9,33 @@ if len( astrTables ) > 1:
 
 aastrHeaders = []
 hashResults = {}
+fOrg = False
 for iTable in range( len( astrTables ) ):
 	fFirst = True
 	for strLine in open( astrTables[iTable] ):
 		astrLine = [strToken.strip( ) for strToken in strLine.split( "\t" )]
-		astrData = astrLine[1:]
+		if ( astrLine[1] == "Organism" ) | fOrg:
+			astrData = astrLine[2:]
+		else:
+			astrData = astrLine[1:]
 		if fFirst:
 			fFirst = False
+			fOrg = astrLine[1] == "Organism"
 			aastrHeaders.append( astrData )
 			continue
 		if astrLine[0] == "#":
 			continue
-		aastrRow = hashResults.setdefault( astrLine[0], [] )
+		if fOrg:
+			aastrRow = hashResults.setdefault( "\t".join( ( astrLine[0], astrLine[1] ) ), [] )
+		else:
+			aastrRow = hashResults.setdefault( astrLine[0], [] )
 		if len( aastrRow ) <= iTable:
 			aastrRow += [None] * ( 1 + iTable - len( aastrRow ) )
 		aastrRow[iTable] = astrData
 
 sys.stdout.write( "ID" )
+if fOrg:
+	sys.stdout.write( "	Organism" )
 for iTable in range( len( astrTables ) ):
 	astrHeaders = [astrTables[iTable]] + aastrHeaders[iTable][1:]
 	pMatch = re.search( '^(?:.*\/)?(.+)_\d+[a-z]*(-[^.]+)?', astrHeaders[0] )

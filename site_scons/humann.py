@@ -117,6 +117,7 @@ def prog( strFile ):
 # Pipeline scripts
 #===============================================================================
 c_strProgBlast2Hits			= prog( "blast2hits.py" )
+c_strProgBam2Hits			= prog( "bam2hits.py" )
 c_strProgHits2Enzymes		= prog( "hits2enzymes.py" )
 c_strProgHits2Metacyc		= prog( "hits2metacyc.py" )
 c_strProgHits2Metarep		= prog( "hits2metarep.py" )
@@ -146,6 +147,7 @@ c_strProgExclude			= prog( "exclude.py" )
 c_strProgNormalize			= prog( "normalize.py" )
 c_strProgEco				= prog( "eco.py" )
 c_strProgMetadata			= prog( "metadata.py" )
+c_strProgLefse				= prog( "pathways2lefse.py" )
 #===============================================================================
 # Preprocessing scripts
 #===============================================================================
@@ -165,7 +167,8 @@ c_strProgModule2ModuleC		= prog( "module2modulec.py" )
 c_strProgCat				= prog( "cat.py" )
 c_strProgOutput				= prog( "output.py" )
 c_strProgMerge				= prog( "merge_tables.py" )
-c_strProgPerf				= prog( "performance.R" )
+c_strProgPerfR				= prog( "performance.R" )
+c_strProgPerf				= prog( "performance.py" )
 
 c_strMock					= "mock"
 c_strSuffixOutput			= ".txt"
@@ -184,11 +187,14 @@ def ts( astrTargets, astrSources ):
 def cts( astrTargets, astrSources ):
 
 	strT, astrSs = ts( astrTargets, astrSources )
+	print( astrSs[0] )
 	strCmd = "cat"
 	if astrSs[0].find( ".gz" ) >= 0:
 		strCmd = "gunzip -c"
 	elif astrSs[0].find( ".bz2" ) >= 0:
 		strCmd = "bunzip2 -c"
+	elif astrSs[0].find( ".bam" ) >= 0:
+		strCmd = "samtools view"
 	return (strCmd, strT, astrSs)
 
 def out( strCmd, strFile ):
@@ -366,25 +372,27 @@ def main( hashVars ):
 		pMatch = re.search( '.*_(\d+.*?-\S+)' + c_strSuffixOutput + '$', strTo )
 		if pMatch:
 			hashTo.setdefault( pMatch.group( 1 ), [] ).append( strTo )
-
 	hashPerf = {}
 	for fileSynth in ( [] if ( not c_fMocks ) else \
-		Glob( "/".join( (c_strDirSynth, c_strDirOutput, c_strMock + "_*_0[0-9]*" + c_strSuffixOutput) ) ) + \
-		Glob( "/".join( (c_strDirSynth, c_strDirCyc, "*" + c_strMock + "_*_0[0-9]*" + c_strSuffixOutput) ) ) ):
-		pMatch = re.search( '(?:([^/]+)_)?(' + c_strMock + '.*)_(\d{2}[^-.]*)', str(fileSynth) )
+		glob.glob( "/".join( (c_strDirSynth, c_strDirOutput, c_strMock + "_*_0[0-9]*" + c_strSuffixOutput) ) ) + \
+		glob.glob( "/".join( (c_strDirSynth, c_strDirCyc, "*" + c_strMock + "_*_0[0-9]*" + c_strSuffixOutput) ) ) ):
+		pMatch = re.search( '(?:([^/]+)_)?(' + c_strMock + '.*?)(?:_(org|nor))?_(\d{2}[^-.]*)', str(fileSynth) ) # HERE
 		if not pMatch:
 			continue
-		strPaths, strBase, strType = pMatch.groups( )
+		strPaths, strBase, strOrg, strType = pMatch.groups( )
+		if strOrg:
+			if ( c_fOrg and ( strOrg == "nor" ) ) or ( ( not c_fOrg ) and ( strOrg == "org" ) ):
+				continue
 		astrFiles = filter( lambda s: s.find( strBase ) >= 0, hashTypes.get( strType, [] ) )
 		if strPaths:
 			astrFiles = filter( lambda s: s.find( strPaths ) >= 0, astrFiles )
 			strBase = "_".join( (strPaths, strBase) )
+			
 		strType, strSubtype = strType[0:2], strType[2:]
 		strType = strBase + "_" + strType
 		strFile = c_strDirOutput + "/" + strType + strSubtype + c_strSuffixOutput
 		hashTo[strType + strSubtype] = [str(fileSynth)] + astrFiles
 		hashPerf.setdefault( strType, set() ).add( strFile )
-
 	for strType, astrType in hashTo.items( ):
 		strFile = c_strDirOutput + "/" + strType + c_strSuffixOutput
 		aastrFinalizers = []
@@ -407,17 +415,41 @@ def main( hashVars ):
 		pFile = pE.Command( strFile, [c_strProgMerge, c_strProgName, c_strFileMapKEGGTXT] +
 			map( lambda a: a[0], aastrFinalizers ) + astrType + list(setFinalizers), funcFile )
 		Default( pFile )
+		
+		strFileN = c_strDirOutput + "/" + strType + "-lefse" + c_strSuffixOutput
+		aastrExport = []
+		setExport = set()
+		for astrExport in c_aastrExport:
+			if ( not astrExport[0] ) or re.search( astrExport[0], strFileN ):
+				aastrExport.append( astrExport[1:] )
+				if len( astrExport ) > 2:
+					setExport |= set(astrExport[2])
+	
+		def funcExport( target, source, env, astrFiles = astrType, aastrExport = aastrExport ):
+	
+			strT, astrSs = ts( target, source )
+			strExport = " | ".join( map( lambda a: " ".join( [a[0]] + ( a[1] if ( len( a ) > 1 ) else [] ) ), aastrExport ) )
+			return ex( out( " ".join( ["cat", astrSs[0]] + ["|", strExport] ), strT ) )
+		if len( setExport ) > 0:
+			pFile = pE.Command( strFileN, [strFile] + map( lambda a: a[0], aastrExport ) + list(setExport), funcExport )
+			Default( pFile )
 	
 #===============================================================================
 # Synthetic community evaluation
 #===============================================================================
-
+#	for strType, astrFiles in hashPerf.items( ):
+#		def funcPerf( target, source, env ):
+#			strT, astrSs = ts( target, source )
+#			strR, astrArgs = astrSs[0], astrSs[1:]
+#			return ex( " ".join( ["Rscript", strR, strT] + astrArgs ) )
+#		pFile = pE.Command( c_strDirOutput + "/" + strType + c_strSuffixPerf,
+#			[( c_strProgPerfR )] + sorted( astrFiles ), funcPerf )
+#		Default( pFile )
 	for strType, astrFiles in hashPerf.items( ):
 		def funcPerf( target, source, env ):
 			strT, astrSs = ts( target, source )
 			strR, astrArgs = astrSs[0], astrSs[1:]
-			return ex( " ".join( ["R", "--no-save", "--args", strT] + astrArgs + ["<", strR] ) )
-
+			return ex( " ".join( [c_strProgPerf, strR] + strT.split(".") + astrArgs ) )
 		pFile = pE.Command( c_strDirOutput + "/" + strType + c_strSuffixPerf,
-			[c_strProgPerf] + sorted( astrFiles ), funcPerf )
+			[( c_strProgPerfR )] + sorted( astrFiles ), funcPerf )
 		Default( pFile )

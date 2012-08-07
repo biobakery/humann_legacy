@@ -9,42 +9,58 @@ if len( sys.argv ) != 3:
 	raise Exception( "Usage: enzymes2pathways_mp.py <minpath.py> <mapfile> < <enzymes.txt>" )
 strMP, strMap = sys.argv[1:]
 
-hashAbs = {}
+hashhashAbs = {}
 astrComments = []
-iIn, strIn = tempfile.mkstemp( )
+
 for strLine in sys.stdin:
 	if strLine and ( strLine[0] == "#" ):
 		astrComments.append( strLine )
 		continue
-	strID, strAb = strLine.strip( ).split( "\t" )
-	if strID == "GID":
+	astrLine = strLine.strip( ).split( "\t" )
+	if ( astrLine[0] == "GID" ):
+		fOrg = len(astrLine) > 2
 		continue
-	hashAbs[strID] = d = float(strAb)
-	os.write( iIn, "%s	%g\n" % (strID, d) )
-os.close( iIn )
+	strOrg = astrLine[1] if fOrg else None
+	dScore = float( astrLine[2] ) if fOrg else float( astrLine[1] )
+	hashhashAbs.setdefault( strOrg, {} )[astrLine[0]] = d = float( astrLine[2] ) if fOrg else float( astrLine[1] )
 
-iOut, strOut = tempfile.mkstemp( )
-iTmp, strTmp = tempfile.mkstemp( )
-os.close( iOut )
-subprocess.call( [strMP, "-any", strIn, "-map", strMap,
-	"-report", "/dev/null", "-details", strOut, "-mps", strTmp],
-	env = {"MinPath": os.path.dirname( strMP )}, stdout = sys.stderr )
-os.unlink( strIn )
+hashhashPaths = {}
+for strOrg, hashAbs in hashhashAbs.items( ):
+	iIn, strIn = tempfile.mkstemp( )
+	for strID, dAb in hashAbs.items( ):
+		os.write( iIn, "%s	%g\n" % (strID, dAb) )
+	os.close( iIn )
+	iOut, strOut = tempfile.mkstemp( )
+	iTmp, strTmp = tempfile.mkstemp( )
+	os.close( iOut )
+	subprocess.call( [strMP, "-any", strIn, "-map", strMap,
+		"-report", "/dev/null", "-details", strOut, "-mps", strTmp],
+		env = {"MinPath": os.path.dirname( strMP )}, stdout = sys.stderr )
+	os.unlink( strIn )
 
-strPath = None
-hashPaths = {}
-for strLine in open( strOut ):
-	astrLine = strLine.strip( ).split( " " )
-	if strLine[0:4] == "path":
-		strPath = astrLine[7]
-	else:
-		hashPaths.setdefault( astrLine[0], [] ).append( strPath )
-os.unlink( strOut )
+	strPath = None
+	for strLine in open( strOut ):
+		astrLine = strLine.strip( ).split( " " )
+		if strLine[0:4] == "path":
+			strPath = astrLine[7]
+		else:
+			hashhashPaths.setdefault( strOrg, {} ).setdefault( astrLine[0], [] ).append( strPath )
+	os.unlink( strOut )
+	os.close( iTmp )
 
-print( "GID	Pathway	Abundance" )
+sys.stdout.write( "GID	" )
+if fOrg:
+	sys.stdout.write( "Organism	" )
+print( "Pathway	Abundance" )
 sys.stdout.write( "".join( astrComments ) )
-for strID, dAb in hashAbs.items( ):
-	astrPaths = hashPaths.get( strID ) or [""]
-	strAb = str(dAb) # / len( astrPaths ))
-	for strPath in ( astrPaths or [""] ):
-		print( "\t".join( [strID, strPath, strAb] ) )
+for strOrg, hashAbs in hashhashAbs.items( ):
+	hashPaths = hashhashPaths.get( strOrg ) or {}
+	for strID, dAb in hashAbs.items( ):
+		astrPaths = hashPaths.get( strID ) or [""]
+		strAb = str(dAb) # / len( astrPaths ))
+		if fOrg:
+			for strPath in ( astrPaths or [""] ):
+				print( "\t".join( [strID, strOrg, strPath, strAb] ) )
+		else:
+			for strPath in ( astrPaths or [""] ):
+				print( "\t".join( [strID, strPath, strAb] ) )

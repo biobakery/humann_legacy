@@ -4,13 +4,14 @@ import math
 import re
 import sys
 
-# Implementation thanks to http://www.crbond.com/math.htm thanks to Zhang and Jim
+# Implementation thanks to http://www.crbond.com/math.htm thanks to Zhang and Jin
+# Modified to only return normalized/regularized lower incomplete gamma
 def incomplete_gamma( dA, dX ):
 
 	if ( dA < 0 ) or ( dX < 0 ):
 		return None
 	if not dX:
-		return (0, math.gamma( dA ), 0)
+		return 0
 	xam = -dX + dA * math.log( dX )
 	if ( xam > 700 ) or ( dA > 170 ):
 		return None
@@ -23,19 +24,18 @@ def incomplete_gamma( dA, dX ):
 				break
 		ga = math.gamma( dA )
 		gin = math.exp( xam ) * s
-		return (gin, ga - gin, gin / ga)
+		return ( gin / ga )
 
 	t0 = 0
 	for k in range( 60, 0, -1 ):
 		t0 = float(k - dA) / ( 1 + ( float(k) / ( dX + t0 ) ) )
 	gim = math.exp( xam ) / ( dX + t0 )
 	ga = math.gamma( dA )
-	return (ga - gim, gim, 1 - ( gim / ga ))
+	return ( 1 - ( gim / ga ) )
 
 def chi2cdf( dX, dK ):
 	
-	adIG = incomplete_gamma( dK / 2.0, dX / 2.0 )
-	return ( adIG[-1] if adIG else None )
+	return incomplete_gamma( dK / 2.0, dX / 2.0 )
 
 class CPathway:
 	class CTree:

@@ -7,7 +7,8 @@ c_strKO	= "ko"
 
 if len( sys.argv ) < 4:
 	raise Exception( "Usage: orgs2abd.py <stagger> <pathwayc> <pathways.list>+ < <organisms.txt>" )
-strStagger, strPathways, astrPathways = sys.argv[1], sys.argv[2], sys.argv[3:]
+strStagger, strOrg, strPathways, astrPathways = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4:]
+fOrgResult = int(strOrg) != 0
 fStagger = int(strStagger) != 0
 
 hashOrgs = {}
@@ -50,14 +51,21 @@ for strOrg, fOrg in hashHits.items( ):
 	if not fOrg:
 		sys.stderr.write( "Missing genome: %s\n" % strOrg )
 
-hashAbds = {}
+hashhashAbds = {}
 for strOrg, setPathways in hashPathways.items( ):
 	dAbd = hashOrgs[strOrg] if fStagger else 1
 	for strPathway in setPathways:
-		dCur = hashAbds.get( strPathway, 0 )
-		hashAbds[strPathway] = dCur + dAbd
+		dCur = hashhashAbds.setdefault( strOrg if fOrgResult else None, {} ).get( strPathway, 0 )
+		hashhashAbds[strOrg if fOrgResult else None][strPathway] = dCur + dAbd
 
-print( "PID	Abundance" )
-for strPathway, dAbd in hashAbds.items( ):
-	print( "\t".join( (strPathway, ( "%g" % dAbd ) ) ) )
+sys.stdout.write( "PID	" )
+if fOrgResult:
+	sys.stdout.write( "Organism	" )
+print( "Abundance" )
+for strOrg, hashAbds in hashhashAbds.items( ):
+	for strPathway, dAbd in hashAbds.items( ):
+		sys.stdout.write( "%s	" % strPathway )
+		if fOrgResult:
+			sys.stdout.write( "%s	" % strOrg )
+		print( "%g" % dAbd )
 	

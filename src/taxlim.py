@@ -26,31 +26,44 @@ hashOrgs = {}
 for strLine in sys.stdin:
 	astrLine = strLine.strip( ).split( "\t" )
 	if astrLine[0] == "GID":
+		fOrg = len( astrLine ) == 4
 		continue
 	if astrLine[0] == "#":
 		hashOrgs[astrLine[1]] = float(astrLine[2])
 		continue
-	hashhashKOs.setdefault( astrLine[0], {} )[astrLine[1]] = float(astrLine[2])
+	if ( fOrg ):
+		hashhashKOs.setdefault( ":".join( (astrLine[1], astrLine[0]) ), {} )[astrLine[2]] = float(astrLine[3])
+	else:
+		hashhashKOs.setdefault( astrLine[0], {} )[astrLine[1]] = float(astrLine[2])
 
 if strKOC:
-	hashNorm = {}
-	for strLine in open( strKOC ):
-		astrLine = strLine.strip( ).split( "\t" )
-		dNorm = 0
-		setOrgs = set()
-		for strToken in astrLine[1:]:
-			strOrg, strGene = strToken.split( "#" )
-			strOrg = strOrg.lower( )
-			setOrgs.add( strOrg )
-			dNorm += hashOrgs.get( strOrg, 0 )
-		dSum = reduce( lambda dS, d: dS + d, (hashOrgs.get( s, 0 ) for s in setOrgs) )
-		if dNorm:
-			hashNorm[astrLine[0]] = dSum / dNorm
-	if hashNorm:
-		for strKO, hashKEGGs in hashhashKOs.items( ):
-			dNorm = hashNorm.get( strKO, 0 )
-			for strKEGG, dValue in hashKEGGs.items( ):
-				hashKEGGs[strKEGG] = dValue * dNorm
+    hashNorm = {}
+    for strLine in open( strKOC ):
+        astrLine = strLine.strip( ).split( "\t" )
+        dNorm = 0
+        setOrgs = set()
+        hashOrgsKO = {}
+        for strToken in astrLine[1:]:
+            strOrg, strGene = strToken.split( "#" )
+            strOrg = strOrg.lower( )
+            setOrgs.add( strOrg )
+            if fOrg:
+                hashOrgsKO.setdefault( strOrg, 0 )
+                hashOrgsKO[strOrg] += hashOrgs.get( strOrg, 0 )
+            else:
+                dNorm += hashOrgs.get( strOrg, 0 )
+        dSum = reduce( lambda dS, d: dS + d, (hashOrgs.get( s, 0 ) for s in setOrgs) )
+        if fOrg:
+            for strOrg, dNorm in hashOrgsKO.items( ):
+                if dNorm:
+                    hashNorm[":".join( [strOrg, astrLine[0]] )] = dSum / dNorm
+        elif dNorm:
+            hashNorm[astrLine[0]] = dSum / dNorm
+    if hashNorm:
+        for strKO, hashKEGGs in hashhashKOs.items( ):
+            dNorm = hashNorm.get( strKO, 0 )
+            for strKEGG, dValue in hashKEGGs.items( ):
+                hashKEGGs[strKEGG] = dValue * dNorm
 
 hashTaxlim = {}
 for strOrg, dOrg in hashOrgs.items( ):
@@ -77,8 +90,13 @@ def funcCmp( aOne, aTwo ):
 	i = cmp( aTwo[1], aOne[1] )
 	return ( i if i else cmp( hashTaxlim.get( aTwo[0], 0 ), hashTaxlim.get( aOne[0], 0 ) ) )
 
-print( "GID	Pathway	Abundance" )
+sys.stdout.write( "GID	" )
+if fOrg:
+	sys.stdout.write( "Organism	" )
+print( "Pathway	Abundance" )
 for strKO, hashPaths in hashhashKOs.items( ):
+	if ( fOrg ):
+		strOrg, strKO = strKO.split(":")
 	aaPaths = sorted( hashPaths.items( ), cmp = funcCmp )
 	while len( aaPaths ) > 1:
 		strPath, dPath = aaPaths[-1]
@@ -88,4 +106,7 @@ for strKO, hashPaths in hashhashKOs.items( ):
 #		sys.stderr.write( "%s\n" % [strKO, strPath, dPath] )
 		aaPaths.pop( )
 	for aPath in aaPaths:
-		print( "\t".join( [strKO] + [str(pCur) for pCur in aPath] ) )
+		if ( fOrg ):
+			print( "\t".join( [strKO, strOrg] + [str(pCur) for pCur in aPath] ) )
+		else:
+			print( "\t".join( [strKO] + [str(pCur) for pCur in aPath] ) )

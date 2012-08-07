@@ -7,7 +7,7 @@ import sys
 # Configurable parameters
 #===============================================================================
 # True if current HC/LC communities and sequences should be left unchanged
-c_fFrozen				= True
+c_fFrozen				= False
 # Total number of target bases per organism
 c_iBases				= 10**8
 # Simulated read length (should match training data for MAQ error model)
@@ -46,6 +46,7 @@ c_strLIST				= ".list"
 c_strCov				= "_04a"
 c_strAbd				= "_04b"
 c_strKOs				= "_01"
+c_astrOrg				= ["_nor", "_org"]
 
 #===============================================================================
 # Directories
@@ -101,7 +102,8 @@ c_strMAQBase			= "maq-0.7.1"
 c_strFileMAQTARBZ		= c_strMAQBase + c_strTARBZ
 c_strProgMAQ			= "./" + c_strMAQBase + "/maq"
 
-c_strURLKEGG			= "ftp://ftp.genome.jp/pub/kegg/genes/organisms/"
+#c_strURLKEGG			= "ftp://ftp.genome.jp/pub/kegg/genes/organisms/"
+c_strURLKEGG			= "file:///n/CHB/data/KEGG/ftp.genome.jp/pub/kegg/genes/organisms/"
 
 if c_fFrozen:
 	def decider( dependency, target, prev_ni ):
@@ -144,8 +146,10 @@ def enstrip( strTarget, strSuffix = None ):
 	return ( strRet.replace( strSuffix, "" ) if strSuffix else strRet )
 
 def encurl( strURL, strTarget, strSuffix = None ):
-
 	return ( "curl " + strURL + enstrip( strTarget, strSuffix ) ) 
+
+def enLS( strURL, strTarget, strSuffix = None ):
+	return ( "ls " + strURL + enstrip( strTarget, strSuffix ) ) 
 
 #===============================================================================
 # KEGG reference genome downloads
@@ -157,7 +161,7 @@ def funcOrgTXT( target, source, env ):
 	genome file name.
 	"""
 	strT, astrSs = ts( target, source )
-	return sh( encurl( c_strURLKEGG, strT, c_strTXT ) + "/ > " + strT )
+	return sh( enLS( c_strURLKEGG[7:], strT, c_strTXT ) + "/ > " + strT )
 
 def funcOrgFile( target, source, env ):
 	"""
@@ -258,6 +262,7 @@ for strOrganisms in (f.get_abspath( ) for f in c_afileOrganisms):
 			continue
 
 		strOrg, strAmt = strLine.split( "\t" )
+		
 		strTXT, strGenome, strShred = (( c_strDirOutput + strOrg + strCur ) for strCur in
 			(c_strTXT, c_strGenome, c_strShred))
 		Command( strTXT, None, funcOrgTXT )
@@ -298,31 +303,32 @@ for strOrganisms in (f.get_abspath( ) for f in c_afileOrganisms):
 # Gold standards
 #===============================================================================
 
+		for j in range( len( c_astrOrg ) ):
 # Gold standard KOs
-		def funcKOs( target, source, env, iMix = i ):
+			def funcKOs( target, source, env, iMix = i, iOrg = j ):
 
-			strT, astrSs = ts( target, source )
-			strProg, strOrganisms, strKOC, strKOs = astrSs + ( [""] * ( 4 - len( astrSs ) ) )
-			return sh( " ".join( [strProg, str(iMix), strKOC, strKOs, "<", strOrganisms, ">", strT] ) )
+				strT, astrSs = ts( target, source )
+				strProg, strOrganisms, strKOC, strKOs = astrSs + ( [""] * ( 4 - len( astrSs ) ) )
+				return sh( " ".join( [strProg, str(iMix), str(iOrg), strKOC, strKOs, "<", strOrganisms, ">", strT] ) )
 
-		strKOs = strMock.replace( c_strFASTA, c_strKOs + c_strTXT )
-		Command( strKOs, [c_strProgKOs, strOrganisms, c_strInputKOC] +
-			( [c_strInputKOs] if os.path.isfile( c_strInputKOs ) else [] ), funcKOs )
-		Default( strKOs )
+			strKOs = strMock.replace( c_strFASTA, c_astrOrg[j] + c_strKOs + c_strTXT )
+			Command( strKOs, [c_strProgKOs, strOrganisms, c_strInputKOC] +
+				( [c_strInputKOs] if os.path.isfile( c_strInputKOs ) else [] ), funcKOs )
+			Default( strKOs )
 
 # Gold standard KEGG pathways
-		def funcAbdCov( target, source, env, iMix = i ):
+			def funcAbdCov( target, source, env, iMix = i, iOrg = j ):
 
-			strT, astrSs = ts( target, source )
-			strProg, strOrganisms, astrPathways = astrSs[0], astrSs[1], astrSs[2:]
-			return sh( " ".join( [strProg, str(iMix)] + astrPathways +
-				["<", strOrganisms, ">", strT] ) )
+				strT, astrSs = ts( target, source )
+				strProg, strOrganisms, astrPathways = astrSs[0], astrSs[1], astrSs[2:]
+				return sh( " ".join( [strProg, str(iMix), str(iOrg)] + astrPathways +
+					["<", strOrganisms, ">", strT] ) )
 
-		strCov = strMock.replace( c_strFASTA, c_strCov + c_strTXT )
-		Command( strCov, [c_strProgCov, strOrganisms, c_strInputPathwayC] + astrPathways,
-			funcAbdCov )
-		Default( strCov )
-		strAbd = strCov.replace( c_strCov, c_strAbd )
-		Command( strAbd, [c_strProgAbd, strOrganisms, c_strInputPathwayC] + astrPathways,
-			funcAbdCov )
-		Default( strAbd )
+			strCov = strMock.replace( c_strFASTA, c_astrOrg[j] + c_strCov + c_strTXT )
+			Command( strCov, [c_strProgCov, strOrganisms, c_strInputPathwayC] + astrPathways,
+				funcAbdCov )
+			Default( strCov )
+			strAbd = strCov.replace( c_strCov, c_strAbd )
+			Command( strAbd, [c_strProgAbd, strOrganisms, c_strInputPathwayC] + astrPathways,
+				funcAbdCov )
+			Default( strAbd )

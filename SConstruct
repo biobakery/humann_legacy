@@ -27,13 +27,20 @@ c_strDirInput				= "input"
 # Directory into which all output files are placed
 c_strDirOutput				= "output"
 # Filename from which metadata annotations are read; can be excluded (see below)
+
+## TODO: Make not default
+
 c_strInputMetadata			= c_strDirInput + "/hmp_metadata.dat"
 # Optional: MetaCyc distribution tarball, will be used for pathways if present
 c_strInputMetaCyc			= "" # c_strDirInput + "/meta.tar.gz"
 c_strVersionMetaCyc			= "14.6"
 # Optional: Generate synthetic community performance descriptors
 # Note: Should build synthetic communities in the "synth" subdirectory if enabled
-c_fMocks					= False
+c_fMocks					= True
+# Optional: Organism specificity in results
+c_fOrg						= False
+# Optional: Multiple samples are in a single file - split input files
+#c_fOrg						= True
 
 # Filename into which all processing steps are logged for provenance tracking
 logging.basicConfig( filename = "provenance.txt", level = logging.INFO,
@@ -54,9 +61,11 @@ c_apProcessors				= [
 #   True if the processor is for input files (and not intermediate files)
 #   True if the processor's output should be gzip compressed
 	CProcessor( ".txt",				"00",	"hit",	c_strProgBlast2Hits,
-		[],									[],				True,	True ),
+		[],									[],	True,	True ),
 	CProcessor( ".txt.gz",			"00",	"hit",	c_strProgBlast2Hits,
-		[],									[],				True,	True ),
+		[],									[],	True,	True ),
+	CProcessor( ".bam",				"00",	"hit",	c_strProgBam2Hits,
+		[],									[],	True,	True ),
 #===============================================================================
 # Example: bzipped mapx data
 #===============================================================================
@@ -88,7 +97,7 @@ c_apProcessors				= [
 #===============================================================================
 # Generate KO abundances from BLAST hits
 	CProcessor( "00",	"01",	"keg",	c_strProgHits2Enzymes,
-		[c_strFileKOC, c_strFileGeneLs] ),
+		[c_strFileKOC, c_strFileGeneLs], [str( c_fOrg )] ),
 # Generate MetaCyc enzyme abundances from BLAST hits
 # Enable only if c_strInputMetaCyc is defined above
 #	CProcessor( "00",	"11",	"mtc",	c_strProgHits2Metacyc,
@@ -157,6 +166,10 @@ c_aastrFinalizers			= [
 	["0(1|(4b))",	c_strProgNormalize],
 	[None,			c_strProgEco],
 	[None,			c_strProgMetadata,	[c_strInputMetadata]],
+]
+
+c_aastrExport				= [
+	["04b.*mpt",	c_strProgLefse, [c_strFileKO], "-lefse"]
 ]
 
 main( globals( ) )
