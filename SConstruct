@@ -38,9 +38,13 @@ c_strVersionMetaCyc			= "14.6"
 # Note: Should build synthetic communities in the "synth" subdirectory if enabled
 c_fMocks					= True
 # Optional: Organism specificity in results
+# True - Use organism specificity
 c_fOrg						= False
+
 # Optional: Multiple samples are in a single file - split input files
-#c_fOrg						= True
+# Not currently linked in HUMAnN, located at src/fnaSplit.py
+# Disabled pending scons support
+# c_fMulti						= True
 
 # Filename into which all processing steps are logged for provenance tracking
 logging.basicConfig( filename = "provenance.txt", level = logging.INFO,
@@ -98,6 +102,8 @@ c_apProcessors				= [
 # Generate KO abundances from BLAST hits
 	CProcessor( "00",	"01",	"keg",	c_strProgHits2Enzymes,
 		[c_strFileKOC, c_strFileGeneLs], [str( c_fOrg )] ),
+	CProcessor( "01",	"01b",	"cat",	c_strProgCat,
+		[] ),
 # Generate MetaCyc enzyme abundances from BLAST hits
 # Enable only if c_strInputMetaCyc is defined above
 #	CProcessor( "00",	"11",	"mtc",	c_strProgHits2Metacyc,
@@ -155,7 +161,7 @@ c_apProcessors				= [
 #===============================================================================
 # A chain of piped finalizers runs on each file produced by the processing
 # pipeline that is _not_ further processed; in other words, the coverage 04a and
-# abundance 04b files.  Each finalizer consists of up to three parts:
+# abundance 04b and 01b files.  Each finalizer consists of up to three parts:
 #   An optional regular expression that must match filenames on which it is run
 #   The processing script
 #   A list of zero or more files provided on the command line to the processing script
@@ -163,13 +169,24 @@ c_apProcessors				= [
 c_aastrFinalizers			= [
 	[None,			c_strProgZero],
 	[None,			c_strProgFilter, 	[c_strFilePathwayC, c_strFileModuleP]],
-	["0(1|(4b))",	c_strProgNormalize],
+	[r'0(1|(4b))',	c_strProgNormalize],
 	[None,			c_strProgEco],
 	[None,			c_strProgMetadata,	[c_strInputMetadata]],
 ]
 
+#===============================================================================
+# A chain of piped exporters runs on each final file produced in the previous step.
+# Each exporter consists of up to three parts:
+#   An optional regular expression that must match filenames on which it is run
+#   An array containing:
+#     The processing script
+#     An array of zero or more files provided on the command line to the processing script
+#   A required tag for the file to differentiate it from other HUMAnN outputs
+#===============================================================================
 c_aastrExport				= [
-	["04b.*mpt",	c_strProgLefse, [c_strFileKO], "-lefse"]
+	[r'04b.*mpt',	[
+						[c_strProgLefse,[c_strFileKO]]
+					],      "-lefse"],
 ]
 
 main( globals( ) )

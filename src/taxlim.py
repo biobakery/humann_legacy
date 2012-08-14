@@ -36,34 +36,25 @@ for strLine in sys.stdin:
 	else:
 		hashhashKOs.setdefault( astrLine[0], {} )[astrLine[1]] = float(astrLine[2])
 
-if strKOC:
-    hashNorm = {}
-    for strLine in open( strKOC ):
-        astrLine = strLine.strip( ).split( "\t" )
-        dNorm = 0
-        setOrgs = set()
-        hashOrgsKO = {}
-        for strToken in astrLine[1:]:
-            strOrg, strGene = strToken.split( "#" )
-            strOrg = strOrg.lower( )
-            setOrgs.add( strOrg )
-            if fOrg:
-                hashOrgsKO.setdefault( strOrg, 0 )
-                hashOrgsKO[strOrg] += hashOrgs.get( strOrg, 0 )
-            else:
-                dNorm += hashOrgs.get( strOrg, 0 )
-        dSum = reduce( lambda dS, d: dS + d, (hashOrgs.get( s, 0 ) for s in setOrgs) )
-        if fOrg:
-            for strOrg, dNorm in hashOrgsKO.items( ):
-                if dNorm:
-                    hashNorm[":".join( [strOrg, astrLine[0]] )] = dSum / dNorm
-        elif dNorm:
-            hashNorm[astrLine[0]] = dSum / dNorm
-    if hashNorm:
-        for strKO, hashKEGGs in hashhashKOs.items( ):
-            dNorm = hashNorm.get( strKO, 0 )
-            for strKEGG, dValue in hashKEGGs.items( ):
-                hashKEGGs[strKEGG] = dValue * dNorm
+if strKOC and not fOrg:
+	hashNorm = {}
+	for strLine in open( strKOC ):
+		astrLine = strLine.strip( ).split( "\t" )
+		dNorm = 0
+		setOrgs = set()
+		for strToken in astrLine[1:]:
+			strOrg, strGene = strToken.split( "#" )
+			strOrg = strOrg.lower( )
+			setOrgs.add( strOrg )
+			dNorm += hashOrgs.get( strOrg, 0 )
+		dSum = reduce( lambda dS, d: dS + d, (hashOrgs.get( s, 0 ) for s in setOrgs) )
+		if dNorm:
+			hashNorm[astrLine[0]] = dSum / dNorm
+	if hashNorm:
+		for strKO, hashKEGGs in hashhashKOs.items( ):
+			dNorm = hashNorm.get( strKO, 0 )
+			for strKEGG, dValue in hashKEGGs.items( ):
+				hashKEGGs[strKEGG] = dValue * dNorm
 
 hashTaxlim = {}
 for strOrg, dOrg in hashOrgs.items( ):

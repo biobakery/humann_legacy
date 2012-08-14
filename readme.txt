@@ -226,6 +226,14 @@ Combined pathway coverage matrix for all samples.
 ----
 Combined pathway abundance matrix for all samples, normalized per column.
 
+04b-*-lefse.txt
+----
+Pathway information formatted for input to LefSe (exported)
+
+01b-*.txt
+----
+Combined KO abundance matrix for all samples, normalized per column.
+
 *_01-keg*.txt
 ----
 Gene abundance calculated as the confidence (e-value/p-value) weighted sum of all hits for each read.

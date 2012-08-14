@@ -416,35 +416,26 @@ def main( hashVars ):
 			map( lambda a: a[0], aastrFinalizers ) + astrType + list(setFinalizers), funcFile )
 		Default( pFile )
 		
-		strFileN = c_strDirOutput + "/" + strType + "-lefse" + c_strSuffixOutput
-		aastrExport = []
-		setExport = set()
 		for astrExport in c_aastrExport:
-			if ( not astrExport[0] ) or re.search( astrExport[0], strFileN ):
-				aastrExport.append( astrExport[1:] )
-				if len( astrExport ) > 2:
-					setExport |= set(astrExport[2])
-	
-		def funcExport( target, source, env, astrFiles = astrType, aastrExport = aastrExport ):
-	
-			strT, astrSs = ts( target, source )
-			strExport = " | ".join( map( lambda a: " ".join( [a[0]] + ( a[1] if ( len( a ) > 1 ) else [] ) ), aastrExport ) )
-			return ex( out( " ".join( ["cat", astrSs[0]] + ["|", strExport] ), strT ) )
-		if len( setExport ) > 0:
-			pFile = pE.Command( strFileN, [strFile] + map( lambda a: a[0], aastrExport ) + list(setExport), funcExport )
+			if ( len( astrExport ) < 3 ):
+				continue
+			strFileN = c_strDirOutput + "/" + strType + astrExport[2] + c_strSuffixOutput
+			aastrExport = []
+			if ( len( astrExport[0] ) > 0 ) and not re.search( astrExport[0], strFileN ):
+				continue
+			aastrExport = astrExport[1]
+			if len( aastrExport ) == 0:
+				continue
+			def funcExport( target, source, env, astrFiles = astrType, aastrExport = aastrExport ):
+				strT, astrSs = ts( target, source )
+				strExport = " | ".join( map( lambda a: " ".join( [a[0]] + ( a[1] if ( len( a ) > 1 ) else [] ) ), aastrExport ) )
+				return ex( out( " ".join( ["cat", astrSs[0], "|", strExport] ), strT ) )
+			pFile = pE.Command( strFileN, [strFile] + map( lambda a: a[0], aastrExport ), funcExport )
 			Default( pFile )
 	
 #===============================================================================
 # Synthetic community evaluation
 #===============================================================================
-#	for strType, astrFiles in hashPerf.items( ):
-#		def funcPerf( target, source, env ):
-#			strT, astrSs = ts( target, source )
-#			strR, astrArgs = astrSs[0], astrSs[1:]
-#			return ex( " ".join( ["Rscript", strR, strT] + astrArgs ) )
-#		pFile = pE.Command( c_strDirOutput + "/" + strType + c_strSuffixPerf,
-#			[( c_strProgPerfR )] + sorted( astrFiles ), funcPerf )
-#		Default( pFile )
 	for strType, astrFiles in hashPerf.items( ):
 		def funcPerf( target, source, env ):
 			strT, astrSs = ts( target, source )
