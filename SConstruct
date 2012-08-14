@@ -36,7 +36,7 @@ c_strInputMetaCyc			= "" # c_strDirInput + "/meta.tar.gz"
 c_strVersionMetaCyc			= "14.6"
 # Optional: Generate synthetic community performance descriptors
 # Note: Should build synthetic communities in the "synth" subdirectory if enabled
-c_fMocks					= True
+c_fMocks					= False
 # Optional: Organism specificity in results
 # True - Use organism specificity
 c_fOrg						= False
