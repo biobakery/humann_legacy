@@ -85,7 +85,6 @@ def data( strFile ):
 	return "/".join( (c_strDirData, strFile) )
 # KEGG
 c_strFileMapKEGGTAB			= data( "map_title.tab" )
-c_strFileKO					= data( "ko" )
 c_strFileGenesPEP			= data( "genes.pep" )
 c_strFileModule				= data( "module" )
 # MetaCyc
@@ -101,6 +100,7 @@ c_strFileGeneLs				= data( "genels" )
 c_strFileTaxPC				= data( "taxpc" )
 c_strFileECC				= data( "ecc" )
 c_strFileCOGC				= data( "cogc" )
+c_strFileKO					= data( "ko-lefse" )
 c_strFileKOCGZ				= data( "koc.gz" )
 c_strFileGeneLsGZ			= data( "genels.gz" )
 # MetaCyc derived

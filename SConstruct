@@ -28,8 +28,6 @@ c_strDirInput				= "input"
 c_strDirOutput				= "output"
 # Filename from which metadata annotations are read; can be excluded (see below)
 
-## TODO: Make not default
-
 c_strInputMetadata			= c_strDirInput + "/hmp_metadata.dat"
 # Optional: MetaCyc distribution tarball, will be used for pathways if present
 c_strInputMetaCyc			= "" # c_strDirInput + "/meta.tar.gz"
