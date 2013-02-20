@@ -5,7 +5,7 @@ import re
 import sys
 
 # Adapted from samtools; will be occasionally inaccurate due to iteration stoppage
-def incomplete_gamma( dS, dZ ):
+def incomplete_gamma1( dS, dZ ):
 	
 	dS, dZ = (float(d) for d in (dS, dZ))
 	dSum = dX = 1
@@ -30,9 +30,47 @@ def _log_gamma( dZ ):
 	dX += 0.9999999999995183;
 	return ( math.log( dX ) - 5.58106146679532777 - dZ + ( ( dZ - 0.5 ) * math.log( dZ + 6.5 ) ) )
 
+# Implementation thanks to http://www.crbond.com/math.htm thanks to Zhang and Jin
+# Modified to only return normalized/regularized lower incomplete gamma
+def incomplete_gamma2( dA, dX ):
+
+	if ( dA < 0 ) or ( dX < 0 ):
+		return None
+	if not dX:
+		return 0
+	xam = -dX + dA * math.log( dX )
+	if ( xam > 700 ) or ( dA > 170 ):
+		return None
+	if dX <= ( dA + 1 ):
+		r = s = 1.0 / dA
+		for k in range( 1, 61 ):
+			r *= float(dX) / ( dA + k )
+			s += r
+			if abs( r / s ) < 1e-15:
+				break
+		ga = math.gamma( dA )
+		gin = math.exp( xam ) * s
+		return ( gin / ga )
+
+	t0 = 0
+	for k in range( 60, 0, -1 ):
+		t0 = float(k - dA) / ( 1 + ( float(k) / ( dX + t0 ) ) )
+	gim = math.exp( xam ) / ( dX + t0 )
+	ga = math.gamma( dA )
+	return ( 1 - ( gim / ga ) )
+
+#for dX, dY in ((1, 1), (1, 2), (2, 1), (3, 4), (5, 10), (40, 2636)):
+#	print( "\t".join( (str(d) for d in (incomplete_gamma( dX, dY ), incomplete_gamma2( dX, dY ))) ) )
+#sys.exit( 0 )
+
 def chi2cdf( dX, dK ):
 	
-	return incomplete_gamma( dK / 2.0, dX / 2.0 )
+	dK, dX = (( d / 2 ) for d in (dX, dK))
+	dRet = incomplete_gamma1( dK, dX )
+	# Ugh - there's no better way to do this in Python 2?
+	if abs( dRet ) != float("Inf"):
+		return dRet
+	return incomplete_gamma2( dK, dX )
 
 class CPathway:
 	class CTree:
@@ -55,8 +93,7 @@ class CPathway:
 			return self.m_setGenes
 
 		def _mean( self, ad ):
-	
-	#		return ( ( reduce( lambda dProd, d: dProd * d, ad, 1 ) ** ( 1.0 / len( ad ) ) ) if ad else 0 )
+
 			return ( ( len( ad ) / sum( ( 1.0 / d ) for d in ad ) ) if ( ad and ( min( ad ) > 0 ) ) else 0 )
 		
 		def _reqopt( self, adReq, adOpt ):
