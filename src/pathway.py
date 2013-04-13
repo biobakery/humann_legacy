@@ -14,21 +14,7 @@ def incomplete_gamma1( dS, dZ ):
 		dSum += dX
 		if ( dX / dSum ) < 1e-14:
 			break
-	return ( math.exp( ( dS * math.log( dZ ) ) - dZ - _log_gamma( dS + 1 ) + math.log( dSum ) ) if dZ else 0 )
-
-def _log_gamma( dZ ):
-	
-	dX = 0
-	dX += 0.1659470187408462e-06 / ( dZ + 7 )
-	dX += 0.9934937113930748e-05 / ( dZ + 6 )
-	dX -= 0.1385710331296526     / ( dZ + 5 )
-	dX += 12.50734324009056      / ( dZ + 4 )
-	dX -= 176.6150291498386      / ( dZ + 3 )
-	dX += 771.3234287757674      / ( dZ + 2 )
-	dX -= 1259.139216722289      / ( dZ + 1 )
-	dX += 676.5203681218835      / dZ
-	dX += 0.9999999999995183;
-	return ( math.log( dX ) - 5.58106146679532777 - dZ + ( ( dZ - 0.5 ) * math.log( dZ + 6.5 ) ) )
+	return ( math.exp( ( dS * math.log( dZ ) ) - dZ - math.log( math.gamma( dS + 1 ) ) + math.log( dSum ) ) if dZ else 0 )
 
 # Implementation thanks to http://www.crbond.com/math.htm thanks to Zhang and Jin
 # Modified to only return normalized/regularized lower incomplete gamma
@@ -60,17 +46,22 @@ def incomplete_gamma2( dA, dX ):
 	return ( 1 - ( gim / ga ) )
 
 #for dX, dY in ((1, 1), (1, 2), (2, 1), (3, 4), (5, 10), (40, 2636)):
-#	print( "\t".join( (str(d) for d in (incomplete_gamma( dX, dY ), incomplete_gamma2( dX, dY ))) ) )
+#	print( "\t".join( (str(d) for d in (incomplete_gamma1( dX, dY ), incomplete_gamma2( dX, dY ))) ) )
 #sys.exit( 0 )
 
 def chi2cdf( dX, dK ):
 	
-	dK, dX = (( d / 2 ) for d in (dX, dK))
+	dX, dK = (( d / 2.0 ) for d in (dX, dK))
 	dRet = incomplete_gamma1( dK, dX )
 	# Ugh - there's no better way to do this in Python 2?
 	if abs( dRet ) != float("Inf"):
 		return dRet
 	return incomplete_gamma2( dK, dX )
+
+#import scipy.stats
+#for dX, dK in ((0.5, 2), (1.5, 3), (2.5, 4), (3.5, 5)):
+#	print( "\t".join( str(d) for d in (chi2cdf( dX, dK ), scipy.stats.chi2.cdf( dX, dK )) ) )
+#sys.exit( 0 )
 
 class CPathway:
 	class CTree:
