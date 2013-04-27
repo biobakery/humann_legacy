@@ -5,51 +5,51 @@ import logging.handlers
 import re
 
 def isexclude( strInput ):
-	"""
-	Given the name of an input file, return True if it should be skipped.  Useful for
-	matching only a specific set (by inclusion) or removing a specific set (by exclusion)
-	using regular expression patterns or raw filenames.
-	"""
+        """
+        Given the name of an input file, return True if it should be skipped.  Useful for
+        matching only a specific set (by inclusion) or removing a specific set (by exclusion)
+        using regular expression patterns or raw filenames.
+        """
 
 # Example: exclude any file whose filename ends with ".example".
-#	if re.search( r'\.example$', strInput ):
-#		return True
+#       if re.search( r'\.example$', strInput ):
+#               return True
 
 # By default, exclude nothing
-	return (
-		False
+        return (
+                False
 # Example: exclude any file whose filename does not contain "example".
-#		( strInput.find( "example" ) < 0 )
-	)
+#               ( strInput.find( "example" ) < 0 )
+        )
 
 # Directory name scanned for input files
-c_strDirInput				= "input"
+c_strDirInput                           = "input"
 # Directory into which all output files are placed
-c_strDirOutput				= "output"
+c_strDirOutput                          = "output"
 # Filename from which metadata annotations are read; can be excluded (see below)
 
-c_strInputMetadata			= c_strDirInput + "/hmp_metadata.dat"
+c_strInputMetadata                      = c_strDirInput + "/hmp_metadata.dat"
 # Optional: MetaCyc distribution tarball, will be used for pathways if present
-c_strInputMetaCyc			= "" # c_strDirInput + "/meta.tar.gz"
-c_strVersionMetaCyc			= "14.6"
+c_strInputMetaCyc                       = "" # c_strDirInput + "/meta.tar.gz"
+c_strVersionMetaCyc                     = "14.6"
 # Optional: Generate synthetic community performance descriptors
 # Note: Should build synthetic communities in the "synth" subdirectory if enabled
-c_fMocks					= False
+c_fMocks                                        = False
 # Optional: Organism specificity in results
 # True - Use organism specificity
-c_fOrg						= False
+c_fOrg                                          = False
 
 # Optional: Multiple samples are in a single file - split input files
 # Not currently linked in HUMAnN, located at src/fnaSplit.py
 # Disabled pending scons support
-# c_fMulti						= True
+# c_fMulti                                              = True
 
 # Filename into which all processing steps are logged for provenance tracking
 logging.basicConfig( filename = "provenance.txt", level = logging.INFO,
-	format = '%(asctime)s %(levelname)-8s %(message)s' )
-c_logrFileProvenanceTxt		= logging.getLogger( )
+        format = '%(asctime)s %(levelname)-8s %(message)s' )
+c_logrFileProvenanceTxt         = logging.getLogger( )
 
-c_apProcessors				= [
+c_apProcessors                          = [
 #===============================================================================
 # Default: txt or gzipped txt blastx data
 #===============================================================================
@@ -62,28 +62,30 @@ c_apProcessors				= [
 #   A list of zero or more non-file arguments provided on the command line to the script
 #   True if the processor is for input files (and not intermediate files)
 #   True if the processor's output should be gzip compressed
-	CProcessor( ".txt",				"00",	"hit",	c_strProgBlast2Hits,
-		[],									[],	True,	True ),
-	CProcessor( ".txt.gz",			"00",	"hit",	c_strProgBlast2Hits,
-		[],									[],	True,	True ),
-	CProcessor( ".bam",				"00",	"hit",	c_strProgBam2Hits,
-		[],									[],	True,	True ),
+        CProcessor( ".csv",                             "01",   "keg",  c_strProgCSV2Hits,
+                [],                                                                     [],     True ),
+        CProcessor( ".txt",                             "00",   "hit",  c_strProgBlast2Hits,
+                [],                                                                     [],     True,   True ),
+        CProcessor( ".txt.gz",                  "00",   "hit",  c_strProgBlast2Hits,
+                [],                                                                     [],     True,   True ),
+        CProcessor( ".bam",                             "00",   "hit",  c_strProgBam2Hits,
+                [],                                                                     [],     True,   True ),
 #===============================================================================
 # Example: bzipped mapx data
 #===============================================================================
-#	CProcessor( ".mapx.bz2",		"00",	"hit",	c_strProgBlast2Hits,
-#		[],									["mapx"],		True,	True ),
+#       CProcessor( ".mapx.bz2",                "00",   "hit",  c_strProgBlast2Hits,
+#               [],                                                                     ["mapx"],               True,   True ),
 # Keep just the top 20 hits and nothing above 90% identity (e.g. for evaluation of the synthetic communities)
-#	CProcessor( ".mapx.gz",			"00",	"htt",	c_strProgBlast2Hits,
-#		[],									["mapx", "0.9", "20"],		True,	True ),
+#       CProcessor( ".mapx.gz",                 "00",   "htt",  c_strProgBlast2Hits,
+#               [],                                                                     ["mapx", "0.9", "20"],          True,   True ),
 #===============================================================================
 # Example: gzipped mblastx data
 #===============================================================================
-#	CProcessor( ".mblastx.gz",		"00",	"hit",	c_strProgBlast2Hits,
-#		[],									["mblastx"],	True,	True ),
+#       CProcessor( ".mblastx.gz",              "00",   "hit",  c_strProgBlast2Hits,
+#               [],                                                                     ["mblastx"],    True,   True ),
 # Keepg nothing above 95% identity (e.g. for evaluation of the synthetic communities)
-#	CProcessor( ".mblastx.gz",		"00",	"htt",	c_strProgBlast2Hits,
-#		[],									["mblastx", "0.95"],		True,	True ),
+#       CProcessor( ".mblastx.gz",              "00",   "htt",  c_strProgBlast2Hits,
+#               [],                                                                     ["mblastx", "0.95"],            True,   True ),
 
 #------------------------------------------------------------------------------ 
 
@@ -98,62 +100,62 @@ c_apProcessors				= [
 # hits -> enzymes
 #===============================================================================
 # Generate KO abundances from BLAST hits
-	CProcessor( "00",	"01",	"keg",	c_strProgHits2Enzymes,
-		[c_strFileKOC, c_strFileGeneLs], [str( c_fOrg )] ),
-	CProcessor( "01",	"01b",	"cat",	c_strProgCat,
-		[] ),
+        CProcessor( "00",       "01",   "keg",  c_strProgHits2Enzymes,
+                [c_strFileKOC, c_strFileGeneLs], [str( c_fOrg )] ),
+        CProcessor( "01",       "01b",  "cat",  c_strProgCat,
+                [] ),
 # Generate MetaCyc enzyme abundances from BLAST hits
 # Enable only if c_strInputMetaCyc is defined above
-#	CProcessor( "00",	"11",	"mtc",	c_strProgHits2Metacyc,
-#		[c_strFileMCC] ),
+#       CProcessor( "00",       "11",   "mtc",  c_strProgHits2Metacyc,
+#               [c_strFileMCC] ),
 #===============================================================================
 # hits -> metarep
 #===============================================================================
 # Generate a METAREP input file from BLAST hits
-	CProcessor( "00",	"99",	"mtr",	c_strProgHits2Metarep,
-		[c_strFileGeneLs] ),
+        CProcessor( "00",       "99",   "mtr",  c_strProgHits2Metarep,
+                [c_strFileGeneLs] ),
 #===============================================================================
 # enzymes -> pathways
 #===============================================================================
 # Generate KEGG pathway assignments from KOs
-	CProcessor( "01",	"02a",	"mpt",	c_strProgEnzymes2PathwaysMP,
-		[c_strFileMP, c_strFileKEGGC] ),
+        CProcessor( "01",       "02a",  "mpt",  c_strProgEnzymes2PathwaysMP,
+                [c_strFileMP, c_strFileKEGGC] ),
 # Generate KEGG module assignments from KOs
-	CProcessor( "01",	"02a",	"mpm",	c_strProgEnzymes2PathwaysMP,
-		[c_strFileMP, c_strFileModuleC] ),
+        CProcessor( "01",       "02a",  "mpm",  c_strProgEnzymes2PathwaysMP,
+                [c_strFileMP, c_strFileModuleC] ),
 # Generate MetaCyc pathway assignments from enzymes
-	CProcessor( "11",	"02a",	"mpt",	c_strProgEnzymes2PathwaysMP,
-		[c_strFileMP, c_strFileMCPC] ),
+        CProcessor( "11",       "02a",  "mpt",  c_strProgEnzymes2PathwaysMP,
+                [c_strFileMP, c_strFileMCPC] ),
 #===============================================================================
 # taxonomic provenance
 #===============================================================================
-	CProcessor( "02a",	"02b",	"cop",	c_strProgTaxlim,
-		[c_strFileTaxPC, c_strFileKOC],		[] ),
+        CProcessor( "02a",      "02b",  "cop",  c_strProgTaxlim,
+                [c_strFileTaxPC, c_strFileKOC],         [] ),
 #===============================================================================
 # smoothing
 #===============================================================================
 # Smoothing is disabled by default with the latest KEGG Module update
-#	CProcessor( "02b",	"03a",	"wbl",	c_strProgSmoothWB,
-#		[c_strFilePathwayC] ),
-	CProcessor( "02b",	"03a",	"nul",	c_strProgCat,
-		[] ),
+#       CProcessor( "02b",      "03a",  "wbl",  c_strProgSmoothWB,
+#               [c_strFilePathwayC] ),
+        CProcessor( "02b",      "03a",  "nul",  c_strProgCat,
+                [] ),
 #===============================================================================
 # gap filling
 #===============================================================================
-	CProcessor( "03a",	"03b",	"nve",	c_strProgGapfill,
-		[c_strFilePathwayC] ),
+        CProcessor( "03a",      "03b",  "nve",  c_strProgGapfill,
+                [c_strFilePathwayC] ),
 #===============================================================================
 # COVERAGE
 #===============================================================================
-	CProcessor( "03b",	"03c",	"nve",	c_strProgPathCov,
-		[c_strFilePathwayC, c_strFileModuleP] ),
-	CProcessor( "03c",	"04a",	"xpe",	c_strProgPathCovXP,
-		[c_strProgXipe] ),
+        CProcessor( "03b",      "03c",  "nve",  c_strProgPathCov,
+                [c_strFilePathwayC, c_strFileModuleP] ),
+        CProcessor( "03c",      "04a",  "xpe",  c_strProgPathCovXP,
+                [c_strProgXipe] ),
 #===============================================================================
 # ABUNDANCE
 #===============================================================================
-	CProcessor( "03b",	"04b",	"nve",	c_strProgPathAb,
-		[c_strFilePathwayC, c_strFileModuleP] ),
+        CProcessor( "03b",      "04b",  "nve",  c_strProgPathAb,
+                [c_strFilePathwayC, c_strFileModuleP] ),
 ]
 
 #===============================================================================
@@ -164,12 +166,12 @@ c_apProcessors				= [
 #   The processing script
 #   A list of zero or more files provided on the command line to the processing script
 #===============================================================================
-c_aastrFinalizers			= [
-	[None,			c_strProgZero],
-	[None,			c_strProgFilter, 	[c_strFilePathwayC, c_strFileModuleP]],
-	[r'0(1|(4b))',	c_strProgNormalize],
-	[None,			c_strProgEco],
-	[None,			c_strProgMetadata,	[c_strInputMetadata]],
+c_aastrFinalizers                       = [
+        [None,                  c_strProgZero],
+        [None,                  c_strProgFilter,        [c_strFilePathwayC, c_strFileModuleP]],
+        [r'0(1|(4b))',  c_strProgNormalize],
+        [None,                  c_strProgEco],
+        [None,                  c_strProgMetadata,      [c_strInputMetadata]],
 ]
 
 #===============================================================================
@@ -181,10 +183,10 @@ c_aastrFinalizers			= [
 #     An array of zero or more files provided on the command line to the processing script
 #   A required tag for the file to differentiate it from other HUMAnN outputs
 #===============================================================================
-c_aastrExport				= [
-	[r'04b.*mpt',	[
-						[c_strProgLefse,[c_strFileKO]]
-					],      "-lefse"],
+c_aastrExport                           = [
+        [r'04b.*mpt',   [
+                                                [c_strProgLefse,[c_strFileKO]]
+                                        ],      "-lefse"],
 ]
 
 main( globals( ) )

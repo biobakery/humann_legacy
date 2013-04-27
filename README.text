@@ -152,6 +152,10 @@ Please modify the SConstruct file as needed to specify the exact format of your 
 	usearch
 	-------
 	usearch can be treated identically to "blastx -outfmt 6" if the "--blast6out" flag is provided.
+	
+Additionally, .csv files of tabulated KEGG blast results (samples in columns,
+KO values in rows) can be placed in the input folder and each sample will be
+run through the HUMAnN pipeline separately.
 
 OUTPUTS
 =======

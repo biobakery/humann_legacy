@@ -5,6 +5,7 @@ import os
 import re
 import subprocess
 import sys
+import csv
 
 class CProcessor:
 
@@ -44,8 +45,17 @@ class CProcessor:
 			"_" + pSelf.m_strTo + "\\1-" + pSelf.m_strID + c_strSuffixOutput, strIn )
 		if pSelf.m_fGzip:
 			strRet += ".gz"
+		if pSelf.m_strSuffix == ".csv":
+			for astrLine in csv.reader( open( re.sub( '^.*' + c_strDirOutput + '/', c_strDirInput + "/",
+			strIn ), "rU" ), csv.excel_tab ):
+				strRet = [re.sub( ( pSelf.m_strSuffix + '()$' ) if pSelf.m_strSuffix else
+					( '_' + pSelf.m_strFrom + '(-.*)' + c_strSuffixOutput + '$' ),
+					"_" + pSelf.m_strTo + "\\1-" + pSelf.m_strID + c_strSuffixOutput,
+					( c_strDirOutput + "/" + s + pSelf.m_strSuffix ) )
+					for s in astrLine[1:]]
+				break
 		return strRet
-
+		
 	def out2in( pSelf, strOut ):
 
 		if pSelf.m_fGzip:
@@ -64,12 +74,20 @@ class CProcessor:
 	def ex( pSelf ):
 		
 		def rn( target, source, env, pSelf = pSelf ):
-		
 			strCmd, strT, astrSs = cts( target, source )
 			strCmd = " ".join( (strCmd, astrSs[0], "|", pSelf.cmd( )) )
 			if pSelf.m_fGzip:
 				strCmd += " | gzip -c"
 			return ex( out( strCmd, strT ) )
+			
+		return rn
+
+	def exn( pSelf ):
+		
+		def rn( target, source, env, pSelf = pSelf ):
+			strCmd, strT, astrSs = cts( target, source )
+			strCmd = " ".join( (strCmd, astrSs[0], "|", pSelf.cmd( )) )
+			return ex( strCmd )
 			
 		return rn
 
@@ -100,7 +118,7 @@ c_strFileGeneLs				= data( "genels" )
 c_strFileTaxPC				= data( "taxpc" )
 c_strFileECC				= data( "ecc" )
 c_strFileCOGC				= data( "cogc" )
-c_strFileKO					= data( "ko-lefse" )
+c_strFileKO					= data( "lefse-ko" )
 c_strFileKOCGZ				= data( "koc.gz" )
 c_strFileGeneLsGZ			= data( "genels.gz" )
 # MetaCyc derived
@@ -118,6 +136,7 @@ def prog( strFile ):
 #===============================================================================
 c_strProgBlast2Hits			= prog( "blast2hits.py" )
 c_strProgBam2Hits			= prog( "bam2hits.py" )
+c_strProgCSV2Hits			= prog( "csv2hits.py" )
 c_strProgHits2Enzymes		= prog( "hits2enzymes.py" )
 c_strProgHits2Metacyc		= prog( "hits2metacyc.py" )
 c_strProgHits2Metarep		= prog( "hits2metarep.py" )
@@ -356,13 +375,27 @@ def main( hashVars ):
 				if strTo:
 #					sys.stderr.write( "%s\n" % [strFrom, strTo, pProc.out2in( strTo )] )
 					fHit = True
-					astrNew.append( strTo )
-					pE.Command( strTo, [strFrom] + pProc.deps( ), pProc.ex( ) )
+					if not isinstance( strTo, str ):
+						for strToTo in strTo:
+							astrNew.append( strToTo )
 
-					mtch = re.search( '.*_(\d{2})([^-]*)', strTo )
-					if mtch:
-						for strType in (mtch.group( 1 ), "".join( mtch.groups( ) )):
-							hashTypes.setdefault( strType, set() ).add( strTo )
+						pE.Command( strTo, [strFrom] + pProc.deps( ), pProc.exn( ) )
+
+						for strToTo in strTo:
+							mtch = re.search( '.*_(\d{2})([^-]*)', strToTo )
+							if mtch:
+								for strType in (mtch.group( 1 ), "".join( mtch.groups( ) )):
+									hashTypes.setdefault( strType, set() ).add( strToTo )
+					else:					
+						astrNew.append( strTo )
+
+						pE.Command( strTo, [strFrom] + pProc.deps( ), pProc.ex( ) )
+
+						mtch = re.search( '.*_(\d{2})([^-]*)', strTo )
+						if mtch:
+							for strType in (mtch.group( 1 ), "".join( mtch.groups( ) )):
+								hashTypes.setdefault( strType, set() ).add( strTo )
+
 			if not fHit:
 				astrTo.append( strFrom )
 		astrFrom = astrNew
