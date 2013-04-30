@@ -562,3 +562,4 @@ VERSION HISTORY
 ### v1.0, ***
 
 * Completely revamped pathway coverage calculation, much more accurate for low-abundance events (thanks to Kat Huang, Sean Sykes!)
+* Fixed hits2metarep.py handling of empty hits files (thanks to Pavan Kumar!)
