@@ -15,7 +15,11 @@ if strGeneLs in ("-h", "-help", "--help"):
 	raise Exception( "Usage: hits2metarep.py [genels] < <hits.bin>" )
 
 pHits = hits.CHits( )
-pHits.open( sys.stdin )
+try:
+	pHits.open( sys.stdin )
+except IndexError:
+	sys.stderr.write( "Invalid input hits file; did you provide at least one BLAST hit using the correct gene identifiers?\n" )
+	sys.exit( -1 )
 
 hashGeneLs = {}
 if strGeneLs:
