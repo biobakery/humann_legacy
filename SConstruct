@@ -187,6 +187,9 @@ c_aastrExport                           = [
         [r'04b.*mpt',   [
                                                 [c_strProgLefse,[c_strFileKO]]
                                         ],      "-lefse"],
+        [r'04b.*mpm',   [
+                                                [c_strProgLefse,[c_strFileM]]
+                                        ],      "-lefse"],
 ]
 
 main( globals( ) )
