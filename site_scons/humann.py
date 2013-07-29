@@ -167,7 +167,7 @@ c_strProgExclude			= prog( "exclude.py" )
 c_strProgNormalize			= prog( "normalize.py" )
 c_strProgEco				= prog( "eco.py" )
 c_strProgMetadata			= prog( "metadata.py" )
-c_strProgLefse				= prog( "pathways2lefse.py" )
+c_strProgGraphlan			= prog( "pathways2graphlan.py" )
 #===============================================================================
 # Preprocessing scripts
 #===============================================================================

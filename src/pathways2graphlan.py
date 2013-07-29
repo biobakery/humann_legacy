@@ -5,7 +5,7 @@ import sys
 import re
 
 if len( sys.argv ) < 2:
-	raise Exception( "Usage: pathways2lefse.py <ko-lefse> < <input.txt>" )
+	raise Exception( "Usage: pathways2graphlan.py <ko-lefse> < <input.txt>" )
 strKOc = sys.argv[1]
 
 iLine = 18
@@ -36,7 +36,7 @@ for strLine in open( strKOc ):
 
 if fOrg:
 	for ( strKO, strOrg ) in setPaths:
-		print( hashMeta.get( strKO, strKO ) + "|" + strOrg )
+		print( hashMeta.get( strKO, strKO ) + "." + strOrg ) # Changed separator from pipe to period to reflect change from lefse to graphlan format.
 else:
 	for strKO in setPaths:
 		print( hashMeta.get( strKO, strKO ) )

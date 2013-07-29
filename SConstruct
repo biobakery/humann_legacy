@@ -185,11 +185,11 @@ c_aastrFinalizers                       = [
 #===============================================================================
 c_aastrExport                           = [
         [r'04b.*mpt',   [
-                                                [c_strProgLefse,[c_strFileKO]]
-                                        ],      "-lefse"],
+                                                [c_strProgGraphlan,[c_strFileKO]]
+                                        ],      "-graphlan"],
         [r'04b.*mpm',   [
-                                                [c_strProgLefse,[c_strFileM]]
-                                        ],      "-lefse"],
+                                                [c_strProgGraphlan,[c_strFileM]]
+                                        ],      "-graphlan"],
 ]
 
 main( globals( ) )
