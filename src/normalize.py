@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 
+"""
+Description:
+Point in the pipeline: Finishing steps.
+Program called before: filter.py (if called at all, not always called).
+Program called after: eco.py (if called at all, not always called).
+"""
+
 import sys
 
 astrIDs = adSums = None

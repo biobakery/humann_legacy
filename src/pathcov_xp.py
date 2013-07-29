@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 
+"""
+Description:
+Step in the pipeline: 03c to 04a.
+Program called before: pathcov.py.
+Program called after: None, or performance.py.
+"""
+
 import subprocess
 import sys
 
@@ -15,10 +22,10 @@ dProb = float(sys.argv[3]) if ( len( sys.argv ) > 3 ) else c_dProb
 
 hashPaths = {}
 hashhashPaths = {}
-for strLine in sys.stdin:
-	astrLine = strLine.strip( ).split( "\t" )
-	if astrLine[0] == "PID":
-		fOrg = len( astrLine ) > 2
+for strLine in sys.stdin: # Loop through the lines in the input file (an 03c format file).
+	astrLine = strLine.strip( ).split( "\t" ) # Split each line by tabs into an array.
+	if astrLine[0] == "PID": # If this line is the header line:
+		fOrg = len( astrLine ) > 2 # If the headers are three columns or more, then this is an organism-specific file.
 		continue
 	hashhashPaths.setdefault( astrLine[1] if fOrg else None, {} )[astrLine[0]] = float( astrLine[2] ) if fOrg else float( astrLine[1] )
 sys.stdout.write( "PID	" )

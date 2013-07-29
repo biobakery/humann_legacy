@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 
+"""
+Reformatting a named pcl file
+"""
+
 import sys
 
 if len( sys.argv ) != 2:
-	raise Exception( "Usage: postprocess_names.py <named.pcl> < <unnamed.pcl>" ); end
+	raise Exception( "Usage: postprocess_names.py <named.pcl> <unnamed.pcl>" ); end
 strNamed = sys.argv[1]
 
 hashNames = {}

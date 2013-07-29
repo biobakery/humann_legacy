@@ -39,8 +39,9 @@ funcClean <- function( frmeData ) {
 	return( frmeData ) }
 
 funcData <- function( strCov, strAbd ) {
+	# Loads and cleans the data
 	
-	frmeCov <- read.delim( strCov, row.names = 1 )
+	frmeCov <- read.delim( strCov, row.names = 1 ) # Read delimited file.
 	frmeAbd <- read.delim( strAbd, row.names = 1 )
 	frmeCov <- funcClean( frmeCov )
 	frmeAbd <- funcClean( frmeAbd )
@@ -297,20 +298,20 @@ c_iWidth	<- 2.75
 c_iHeight	<- 2.5
 c_dFPR		<- 0.1
 
-strOutput		<- "output/mock_stg_hc_04.pdf"
+strOutput		<- "output/mock_stg_hc_04.pdf" # defaults
 strCoverage		<- "output/mock_stg_hc_04a.txt"
-strAbundance	<- ""
+strAbundance	<- "output/mock_stg_hc_04b.txt"
 astrArgs <- commandArgs( TRUE )
 if( length( astrArgs ) >= 1 ) {
 	strOutput <- astrArgs[1] }
 if( length( astrArgs ) >= 2 ) {
-	strCoverage <- astrArgs[2] }
+	strCoverage <- astrArgs[2] } # the 04a file
 if( length( astrArgs ) >= 3 ) {
-	strAbundance <- astrArgs[3] }
+	strAbundance <- astrArgs[3] } # the o4b file
 if( !nchar( strAbundance ) ) {
 	strAbundance <- strCoverage }
 
-lsData <- funcData( strCoverage, strAbundance )
+lsData <- funcData( strCoverage, strAbundance ) # Important
 iTypes <- min( 5000, max( ncol( lsData$abd ), ncol( lsData$cov ) ) - 1 )
 if( !is.finite( iTypes ) ) {
 	iTypes <- 0 }

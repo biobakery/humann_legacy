@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import hits
+import hits # Part of HUMAnN, located in src dir
 import math
 import re
 import sys
@@ -59,8 +59,8 @@ for strLine in open( strKOC ):
 		strOrg, strGene = strToken.split( "#" )
 		hashKO.setdefault( strOrg.lower( ), set() ).add( strGene.upper( ) )
 
-pHits = hits.CHits( )
-pHits.open( sys.stdin )
+pHits = hits.CHits( ) # Instantiate a CHits object (see src/hits.py)
+pHits.open( sys.stdin ) #Depickle variables from previous step in pipeline
 hashhashOrgs = {}
 hashOrgs = {}
 
@@ -98,7 +98,7 @@ for strKO, hashKO in hashKOC.items( ):
 		strOrg = astrOrgs[i]
 		for strGene in hashKO.get( strOrg, set() ):
 			adScores[i] += hashhashOrgs.get( strOrg, {} ).get( strGene, 0 )
-		if ( ( adScores[i] > 0 ) and ( fOrg ) ):
+		if ( ( adScores[i] > 0 ) and ( fOrg ) ): # Concatenates org number with hit number
 			strOrgKO = ":".join( [ astrOrgs[i], strKO ] )
 			hashScores[strOrgKO] = adScores[i]
 		dSum += adScores[i]
