@@ -164,7 +164,7 @@ c_apProcessors                          = [
 # abundance 04b and 01b files.  Each finalizer consists of up to three parts:
 #   An optional regular expression that must match filenames on which it is run
 #   The processing script
-#   A list of zero or more files provided on the command line to the processing script
+#   A list of zero or more files provided on the command line to the processing script.
 #===============================================================================
 c_aastrFinalizers                       = [
         [None,                  c_strProgZero],
