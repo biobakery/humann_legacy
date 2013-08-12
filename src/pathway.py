@@ -3,9 +3,6 @@
 import math
 import re
 import sys
-import logging
-
-logging.basicConfig(filename='example.log',level=logging.DEBUG)
 
 
 # Adapted from samtools; will be occasionally inaccurate due to iteration stoppage
@@ -91,7 +88,7 @@ class CPathway:
 			self.m_setGenes = set()
 			if self._isleaf( ): # If m_pToken is a string, add it to the set m_setGenes.
 				self.m_setGenes.add( self.m_pToken )
-			else: # If m_pToken is not a string, it is a tree of sets (?).
+			else:
 				for pTree in self.m_pToken:
 					self.m_setGenes |= pTree.genes( ) # Loop through the whole tree and load all of the genes in all of the sets of the tree into the set setGenes.
 				
@@ -179,9 +176,9 @@ class CPathway:
 			strCur = strToken[i] # strCur is the character currently being examined.
 			if iParen: # If there is at least one open parenthesis already:
 				if strCur == "(":
-					iParen += 1 # Increase the open parenthesis counter by one if the current character is another opening parenthesis.
+					iParen += 1
 				elif strCur == ")":
-					iParen -= 1 # Decrease the open parenthesis counter by one if the current character is a closing parenthesis.
+					iParen -= 1
 					if not iParen: # If closing this parenthesis means no more parentheses are open, then set iLast to the index of the first character outside the parenthesis.
 						iLast = i + 1
 				continue # If a parenthesis is open, then at this point go to next character in the passed-in string.
@@ -212,7 +209,7 @@ class CPathway:
 				strToken = strToken[1:] # If there is such a leading dash, remove it.
 			return CPathway.CTree( self, None, fOpt, strToken ) # Make a call to the CTree class.
 		# If there are commas or pluses in the string passed in:
-		astrToken = self._parse_split( strToken, fJoin ) # HERE
+		astrToken = self._parse_split( strToken, fJoin )
 		return ( CPathway.CTree( self, fJoin, False, [self._parse( s, not fJoin ) for s in astrToken] )
 			if ( len( astrToken ) > 1 ) else self._parse( astrToken[0], not fJoin ) )
 

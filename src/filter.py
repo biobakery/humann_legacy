@@ -11,9 +11,6 @@ Program called after: eco.py or normalize.py.
 import pathway # Part of HUMAnN, see src/pathway.py.
 import re
 import sys
-import logging
-
-logging.basicConfig(filename='example.log',level=logging.DEBUG)
 
 c_iSize	= 4
 

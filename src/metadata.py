@@ -4,7 +4,6 @@
 Description: Pulls metadata from an input file, collects and prints it to the next program in the finishing steps programs.
 Point in the pipeline: Finishing steps.
 Program called before: eco.py.
-Program called after: none, or ??.
 """
 
 import re
@@ -22,7 +21,7 @@ for strLine in open( strMetadata ): # Loop through each line of the metadata fil
 	astrLine = strLine.strip( ).split( "\t" ) # Split each line by tabs.
 	strID, astrData = astrLine[0], astrLine[1:] # The first column is the ID (strID), all subsequent columns are the data (astrData)
 	if astrMetadata: # If there is already data in astrMetadata:
-		if len( astrData ) < len( astrMetadata ): # If there are fewer entrie in the current line of data than in astrMetadata:
+		if len( astrData ) < len( astrMetadata ): # If there are fewer entries in the current line of data than in astrMetadata:
 			astrData += [c_strBlank] * ( len( astrMetadata ) - len( astrData ) ) # Then append blank spots to the current line of data until it is the same size as astrMetadata.
 		hashMetadata[strID] = astrData # Load the metadata for the current line (astrData) into the hashMetadata dict, with the line key (strID) as the ID.
 	else:

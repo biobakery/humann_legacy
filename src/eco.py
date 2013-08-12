@@ -10,9 +10,6 @@ Program called after: metadata.py.
 import csv
 import math
 import sys
-import logging
-
-logging.basicConfig(filename='example.log',level=logging.DEBUG)
 
 def funcInvSimp( adData ):
 	""" Calculates the inverse Simpson (diversity) index. """
@@ -69,4 +66,3 @@ for strID, funcID in (
 		for j in range( len( astrColumns ) - 1 )] ) )
 for iRow in range( len( astrRows ) ):
 	print( "\t".join( [astrRows[iRow]] + [( "%g" % aadData[iRow][i] ) for i in range( len( aadData[iRow] ) )] ) ) # print to stdout: each row in astrRows + the data in aadData corresponding to that row.
-#logging.debug( "\t".join( [astrRows[iRow]] + [( "%g" % aadData[iRow][i] ) for i in range( len( aadData[iRow] ) )] ) )

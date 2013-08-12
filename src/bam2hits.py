@@ -19,9 +19,9 @@ for strLine in sys.stdin: # Loop through the lines of the .bam file (bowtie) pro
 	except IndexError: 
 		sys.stderr.write( "%s\n" % astrLine ) # If there aren't at least 5 columns in the line, print the line's text to console and skip it 
 		continue
-	try: # dE = 10^(strE/-10)
+	try:
 		dE = math.pow( 10.0, ( float( strE ) )/( -10.0 ) ) # Local vs. Global
 	except ValueError:
-		continue # If this is for some reason not possible, skip the line
+		continue
 	pHits.add( strTo, strFrom, dE, 1, 1 ) # Adds strTo, strFrom, and dE to the appropriate member variable arrays and hashtables of the pHits object
 pHits.save( sys.stdout ) # Pickle all of the gathered data (see hits.py) to sys.stdout

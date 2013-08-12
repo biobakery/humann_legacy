@@ -2,7 +2,7 @@
 
 """
 Description:
-Point in the pipeline: Finishing steps.
+Point in the pipeline: Does not have a number for it in the file naming scheme, finalizer.
 Program called before: filter.py (if called at all, not always called).
 Program called after: eco.py (if called at all, not always called).
 """

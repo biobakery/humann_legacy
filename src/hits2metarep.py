@@ -60,7 +60,7 @@ for iFrom in range( pHits.get_froms( ) ): # Once for every entry in the m_astrFr
 
 for iTo in range( len( pAbundances ) ):
 	aadScores = [pHits.get_dic( i ) for i in apScores[iTo]] # For each value in apScores, return an array of the tuples (m_pEs, m_pIDs, m_pCovs) at each value of i. These correspond to (e-values, IDs, Coverages)
-	# NOTE: here is where the error occurs. The code works if aadScores is passed an array with values in it, but if any of the blank entries in apScores are passed get_dic then aadScores will not be constructed properly and an error will result downstream.
+	# TODO Keep an eye on this code. The code works if aadScores is passed an array with values in it, but if any of the blank entries in apScores are passed get_dic then aadScores will not be constructed properly and an error will result downstream.
 	adScores = [median( sorted( aadScores[i][j] for i in range( len( aadScores ) ) ) ) for j in range( len( aadScores[0] ) )]
 	print( "\t".join( [pHits.get_to( iTo )] + [( "%g" % d ) for d in ( [pAbundances[iTo]] +
 		adScores )] ) )

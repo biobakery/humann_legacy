@@ -22,9 +22,9 @@ iID = 2 if ( strType == "blastx" ) else ( 4 if ( strType == "mblastx" ) else Non
 for strLine in sys.stdin:  # Open the file passed to stdin, loop through the lines
 	astrLine = strLine.rstrip( ).split( "\t" ) # For each line, split it into columns along tabs and remove whitespace.
 	if not astrLine[0]:
-		continue # If there is nothing on this line, skip it.
-	if astrLine[0].startswith( "#" ): # If the line starts with a pound sign,
-		if iID == None: # And if there is no blastx vs mblastx identifier given,
+		continue
+	if astrLine[0].startswith( "#" ):
+		if iID == None: # If there is no blastx vs mblastx identifier given,
 			for i in range( len( astrLine ) ): # Loop through all the columns in this line.
 				if astrLine[i] == c_strID: # If any column contains the c_strID defined above in this file,
 					iID = i # Then the blastx vs mblastx identifier is equal to the index of that particular column.
@@ -33,7 +33,7 @@ for strLine in sys.stdin:  # Open the file passed to stdin, loop through the lin
 	if iID == None: # If the line does not start with a pound sign and no blastx vs mblastx identifier is given, then skip this line.
 		continue
 	try:
-		if strType == "mblastx": # If the document type is given to be mblastx:
+		if strType == "mblastx":
 			strTo, strFrom, strID, strE, strCov = (astrLine[1], astrLine[0], astrLine[iID],
 				astrLine[2], astrLine[5]) # Read the strings representing To, From, ID, E value, and Coverage from the appropriate columns for an mblastx file.
 		elif strType == "mapx":
@@ -43,14 +43,14 @@ for strLine in sys.stdin:  # Open the file passed to stdin, loop through the lin
 			strTo, strFrom, strID, strE, strCov = (astrLine[1], astrLine[0], astrLine[iID],
 				astrLine[-2], astrLine[3]) # Read the strings representing To, From, ID, E value, and Coverage from the appropriate columns for an blastx file.
 	except IndexError:
-		sys.stderr.write( "%s\n" % astrLine ) # If anything goes wrong in the course of reading and asigning these variables, write the entire line to standard error.
-		continue # Then go to the next line.
+		sys.stderr.write( "%s\n" % astrLine )
+		continue
 	try:
 		dE, dID, dCov = (float(s) for s in (strE, strID, strCov)) # Cast the E-value, ID, and Coverage strings to floats.
 	except ValueError:
 		continue # If there is a problem casting these values to floats, skip this line.
-	if dFilter > 0: # if dFilter is a number greater than zero:
-		if ( dID / 100 ) >= dFilter: # And if the (ID number/100) is greater than dFilter:
-			continue # Then skip this line. 
+	if dFilter > 0:
+		if ( dID / 100 ) >= dFilter:
+			continue
 	pHits.add( strTo, strFrom, dE, dID, dCov ) # Add To, From, E-value, ID, and Coverage to the pHits object.
 pHits.save( sys.stdout ) # Pickle the member variables associated with pHits, and pass them to stdout.
