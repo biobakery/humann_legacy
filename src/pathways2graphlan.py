@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 
-import hits
 import sys
 import re
 
 if len( sys.argv ) < 2:
-	raise Exception( "Usage: pathways2graphlan.py <ko-lefse> < <input.txt>" )
-strKOc = sys.argv[1]
+	raise Exception( "Usage: pathways2graphlan.py <KEGG-graphlan> < <input.txt>" )
+strKEGGc = sys.argv[1]
 
-iLine = 18
+iLine = 4
 iCLine = 0
 
 setPaths = set()
@@ -29,14 +28,14 @@ for strLine in sys.stdin:
 hashMeta = {}
 pattern = re.compile('[\W_]+')
 fClass = False
-for strLine in open( strKOc ):
+for strLine in open( strKEGGc ):
 	astrLine = strLine.rstrip( ).split( "|" )
-	strKO = astrLine[-1].split( "_" )[-1]
-	hashMeta[strKO] = strLine.rstrip( )
+	strKEGG = astrLine[-1].split( "_" )[-1]
+	hashMeta[strKEGG] = strLine.rstrip( )
 
 if fOrg:
-	for ( strKO, strOrg ) in setPaths:
-		print( hashMeta.get( strKO, strKO ) + "." + strOrg ) # Changed separator from pipe to period to reflect change from lefse to graphlan format.
+	for ( strKEGG, strOrg ) in setPaths:
+		print( hashMeta.get( strKEGG, strKEGG ) + "_" + strOrg )
 else:
-	for strKO in setPaths:
-		print( hashMeta.get( strKO, strKO ) )
+	for strKEGG in setPaths:
+		print( hashMeta.get( strKEGG, strKEGG ) )
