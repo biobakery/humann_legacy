@@ -28,7 +28,7 @@ class CProcessor:
 
 		return ( [pSelf.m_strProcessor] + pSelf.m_astrDeps )
 
-	def in2out( pSelf, strIn ):
+	def in2outs( pSelf, strIn ):
 
 		fInput = re.search( c_strDirInput + '.*' + ( pSelf.m_strSuffix or "" ) + '$', strIn )
 		if ( pSelf.m_strSuffix and not fInput ) or \
@@ -36,25 +36,25 @@ class CProcessor:
 			re.search( '_' + pSelf.m_strFrom + '-', strIn ) ) ):
 			return None
 
-		if not fInput:
-			strIn = re.sub( '\\.gz$', "", strIn )
-		strIn = re.sub( '^.*' + c_strDirInput + '/', c_strDirOutput + "/",
-			strIn )
-		strRet = re.sub( ( pSelf.m_strSuffix + '()$' ) if pSelf.m_strSuffix else
-			( '_' + pSelf.m_strFrom + '(-.*)' + c_strSuffixOutput + '$' ),
-			"_" + pSelf.m_strTo + "\\1-" + pSelf.m_strID + c_strSuffixOutput, strIn )
-		if pSelf.m_fGzip:
-			strRet += ".gz"
-		if pSelf.m_strSuffix == ".csv":
-			for astrLine in csv.reader( open( re.sub( '^.*' + c_strDirOutput + '/', c_strDirInput + "/",
-			strIn ), "rU" ), csv.excel_tab ):
-				strRet = [re.sub( ( pSelf.m_strSuffix + '()$' ) if pSelf.m_strSuffix else
-					( '_' + pSelf.m_strFrom + '(-.*)' + c_strSuffixOutput + '$' ),
-					"_" + pSelf.m_strTo + "\\1-" + pSelf.m_strID + c_strSuffixOutput,
-					( c_strDirOutput + "/" + s + pSelf.m_strSuffix ) )
-					for s in astrLine[1:]]
+		if pSelf.m_strSuffix in c_setstrSuffixesTSV:
+			for astrLine in csv.reader( open( strIn, "rU" ), csv.excel_tab ):
+				astrRet = [( c_strDirOutput + "/" + s + "_" + pSelf.m_strTo + "-" + pSelf.m_strID +
+					c_strSuffixOutput ) for s in astrLine[1:]]
 				break
-		return strRet
+		else:
+			strBase = strIn
+			if not fInput:
+				strBase = re.sub( '\\.gz$', "", strIn )
+			strBase = re.sub( '^.*' + c_strDirInput + '/', c_strDirOutput + "/",
+				strBase )
+			strBase = re.sub( ( pSelf.m_strSuffix + '()$' ) if pSelf.m_strSuffix else
+				( '_' + pSelf.m_strFrom + '(-.*)' + c_strSuffixOutput + '$' ),
+				"_" + pSelf.m_strTo + "\\1-" + pSelf.m_strID + c_strSuffixOutput, strBase )
+			if pSelf.m_fGzip:
+				strBase += ".gz"
+			astrRet = [strBase]
+				
+		return astrRet
 		
 	def out2in( pSelf, strOut ):
 
@@ -71,23 +71,14 @@ class CProcessor:
 		
 		return " ".join( pSelf.deps( ) + pSelf.m_astrArgs )
 
-	def ex( pSelf ):
+	def ex( pSelf, fMulti = False ):
 		
 		def rn( target, source, env, pSelf = pSelf ):
 			strCmd, strT, astrSs = cts( target, source )
 			strCmd = " ".join( (strCmd, astrSs[0], "|", pSelf.cmd( )) )
-			if pSelf.m_fGzip:
+			if ( not fMulti ) and pSelf.m_fGzip:
 				strCmd += " | gzip -c"
-			return ex( out( strCmd, strT ) )
-			
-		return rn
-
-	def exn( pSelf ):
-		
-		def rn( target, source, env, pSelf = pSelf ):
-			strCmd, strT, astrSs = cts( target, source )
-			strCmd = " ".join( (strCmd, astrSs[0], "|", pSelf.cmd( )) )
-			return ex( strCmd )
+			return ex( strCmd if fMulti else out( strCmd, strT ) )
 			
 		return rn
 
@@ -137,7 +128,7 @@ def prog( strFile ):
 #===============================================================================
 c_strProgBlast2Hits			= prog( "blast2hits.py" )
 c_strProgBam2Hits			= prog( "bam2hits.py" )
-c_strProgCSV2Hits			= prog( "csv2hits.py" )
+c_strProgTSV2Hits			= prog( "tsv2hits.py" )
 c_strProgHits2Enzymes		= prog( "hits2enzymes.py" )
 c_strProgHits2Metacyc		= prog( "hits2metacyc.py" )
 c_strProgHits2Metarep		= prog( "hits2metarep.py" )
@@ -193,6 +184,7 @@ c_strProgPerf				= prog( "performance.py" )
 c_strMock					= "mock"
 c_strSuffixOutput			= ".txt"
 c_strSuffixPerf				= ".pdf"
+c_setstrSuffixesTSV			= set((".tsv", ".pcl", ".csv"))
 
 def ex( strCmd ):
 
@@ -232,7 +224,7 @@ def main( hashVars ):
 	for pFile in Glob( c_strDirInput + "/*" ):
 		strFile = str(pFile)
 		for pProc in c_apProcessors:
-			if ( not isexclude( strFile ) ) and pProc.in2out( strFile ):
+			if ( not isexclude( strFile ) ) and pProc.in2outs( strFile ):
 				c_astrInput.append( strFile )
 				break
 	
@@ -365,44 +357,30 @@ def main( hashVars ):
 #===============================================================================
 	
 	astrFrom = c_astrInput
-	astrTo = []
+	astrTos = []
 	hashTypes = {}
 	while len( astrFrom ) > 0:
 		astrNew = []
 		for strFrom in astrFrom:
 			fHit = False
 			for pProc in c_apProcessors:
-				strTo = pProc.in2out( strFrom )
-				if strTo:
-#					sys.stderr.write( "%s\n" % [strFrom, strTo, pProc.out2in( strTo )] )
+				astrTo = pProc.in2outs( strFrom )
+				if astrTo:
+#					sys.stderr.write( "%s\n" % [strFrom, astrTo] )
 					fHit = True
-					if not isinstance( strTo, str ):
-						for strToTo in strTo:
-							astrNew.append( strToTo )
-
-						pE.Command( strTo, [strFrom] + pProc.deps( ), pProc.exn( ) )
-
-						for strToTo in strTo:
-							mtch = re.search( '.*_(\d{2})([^-]*)', strToTo )
-							if mtch:
-								for strType in (mtch.group( 1 ), "".join( mtch.groups( ) )):
-									hashTypes.setdefault( strType, set() ).add( strToTo )
-					else:					
-						astrNew.append( strTo )
-
-						pE.Command( strTo, [strFrom] + pProc.deps( ), pProc.ex( ) )
-
+					astrNew += astrTo
+					pE.Command( astrTo, [strFrom] + pProc.deps( ), pProc.ex( len( astrTo ) > 1 ) )
+					for strTo in astrTo:
 						mtch = re.search( '.*_(\d{2})([^-]*)', strTo )
 						if mtch:
 							for strType in (mtch.group( 1 ), "".join( mtch.groups( ) )):
 								hashTypes.setdefault( strType, set() ).add( strTo )
-
 			if not fHit:
-				astrTo.append( strFrom )
+				astrTos.append( strFrom )
 		astrFrom = astrNew
 	
 	hashTo = {}
-	for strTo in astrTo:
+	for strTo in astrTos:
 		pMatch = re.search( '.*_(\d+.*?-\S+)' + c_strSuffixOutput + '$', strTo )
 		if pMatch:
 			hashTo.setdefault( pMatch.group( 1 ), [] ).append( strTo )

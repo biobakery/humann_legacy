@@ -4,22 +4,22 @@ import sys
 import csv
 import os.path
 
+strPrefix = "" if ( len( sys.argv ) <= 1 ) else sys.argv[1]
+strSuffix = "" if ( len( sys.argv ) <= 2 ) else sys.argv[2]
+
 astrHeaders = astrIDs = []
-aadData = []
-for strLine in sys.stdin:
-	astrLine = strLine.rstrip( ).split( "\t" ) # Split each line of the document by tabs, and then strip it of extra whitespace.
-	strID, astrData = astrLine[0], astrLine[1:] # First column is the ID (strID), all subsequent columns are the data (strData).
-	if astrHeaders: # If the header row has aready been defined and thus this is a subsequent row:
-		astrIDs.append( strID ) # Apend this row's ID to the array of IDs.
-		aadData.append( [float(s) for s in astrData] ) # Apend the data in this row to the array holding the data.
+aastrData = []
+for astrLine in csv.reader( sys.stdin, csv.excel_tab ):
+	strID, astrData = astrLine[0], astrLine[1:]
+	if astrHeaders:
+		astrIDs.append( strID )
+		aastrData.append( astrData )
 	else:
-		astrHeaders = astrData # If this is the header row and thus astrHeaders has not been previously defined, define it to be this row's data.
+		astrHeaders = astrData
 
-for iCol, strCol in enumerate( astrHeaders ): # iCol is the index of the column, strCol is the value in that column.
-
-	ostm = open( join( c_strDirOutput, strCol "_01-keg" + c_strSuffixOutput ), "w" )
-	# Replace '-keg' with c_strDatabaseLabel (which I will need to define)
-	ostm.write( "GID\tAbundance\n" ) # Make GID, Abundance, etc global constants.
-
-	for iRow, strRow in enumerate( astrIDs ): # iRow is the index of the list of IDs, strRow is the list of IDs itself.
-		ostm.write( "%s\t%g\n" % (strID, aadData[iRow][iCol]) ) # Write to the output file the ID in the first column (strID), and then the data value in the second column
+for iCol, strCol in enumerate( astrHeaders ):
+	with open( strPrefix + strCol + strSuffix, "w" ) as ostm:
+		csvw = csv.writer( ostm, csv.excel_tab )
+		csvw.writerow( ("GID", "Abundance") )
+		for iRow, strRow in enumerate( astrIDs ):
+			csvw.writerow( (strRow, aastrData[iRow][iCol]) )

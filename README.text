@@ -116,9 +116,17 @@ implementations such as mapx, mblastx, or usearch.
 INPUTS
 ======
 
-One or more tabular translated BLAST (blastx) output files or bowtie output
-files matching sequence read IDs to gene IDs.  Place (or symlink) each file
-with a .txt, .txt.gz, .txt.bz, or .bam extension in the "input" directory
+One or more of the following:
+
+* Tabular translated BLAST (blastx) output files files matching sequence read
+	IDs to gene IDs.
+
+* Mapping (bowtie, bwa, etc.) output in BAM format.
+
+* Tab-delimited text containing one or more pre-quantified gene abundances.
+
+Place (or symlink) each file with a .txt, .txt.gz, .txt.bz, .bam, .csv, .tsv,
+or .pcl extension as appropriate in the "input" directory
 before running HUMAnN.  The pipeline includes processors for three
 tab-delimited text formats by default (below) and BAM binary format and can
 easily by modified to accept more.
@@ -145,7 +153,7 @@ Please modify the SConstruct file as needed to specify the exact format of your 
 	-------
 	Query_Id Reference_Id E_Value_Bit_Score Identity_Percentage_Length_of_HSP Number_of_Positives_Frame_#s Alignment_Start_in_Query Alignment_End_in_Query Alignment_Start_in_Reference Alignment_End_in_Reference
 	
-	BAM (bowtie/bowtie2)
+	BAM (bowtie/bwa/etc.)
 	--------------------
 	qname flag rname pos mapq cigar rnext pnext tlen seq qual
 	
@@ -153,8 +161,10 @@ Please modify the SConstruct file as needed to specify the exact format of your 
 	-------
 	usearch can be treated identically to "blastx -outfmt 6" if the "--blast6out" flag is provided.
 	
-Additionally, .csv files of tabulated KEGG blast results (samples in columns,
-KO values in rows) can be placed in the input folder and each sample will be
+Additionally, tab-delimited (.csv, .tsv, or .pcl) files of tabulated gene
+abundances (KEGG KO identifiers by default) can be used, with each column
+representing one sample and each row one gene family.  Any such files placed in
+the input directory will be split per column and each sample will be
 run through the HUMAnN pipeline separately.
 
 OUTPUTS
@@ -559,7 +569,11 @@ VERSION HISTORY
 * Fix module size calculation in filter.py
 * Fix a bug in hits2enzymes.py to allow a wider range of KEGG gene name detection
 
-### v1.0, ***
+### v0.99, 09-13-13
 
 * Completely revamped pathway coverage calculation, much more accurate for low-abundance events (thanks to Kat Huang, Sean Sykes!)
 * Fixed hits2metarep.py handling of empty hits files (thanks to Pavan Kumar!)
+* Fixed missing KO gloss annotations in merged 01b*.txt per-gene tabular abundance quantification output files.
+* Added tab-delimited input file formats.
+* Added GraPhlAn tree output files to enable visualization of abundance overlays on KEGG hierarchies (thanks to Jovian Yu, Morgan Paull!).
+* Added preliminary organism-specific output generation.

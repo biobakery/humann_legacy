@@ -1,41 +1,43 @@
 #!/usr/bin/env python
 
+import csv
 import sys
 import re
 
 if len( sys.argv ) < 2:
-	raise Exception( "Usage: pathways2graphlan.py <KEGG-graphlan> < <input.txt>" )
-strKEGGc = sys.argv[1]
+	raise Exception( "Usage: pathways2graphlan.py <kegg-graphlan> < <input.txt>" )
+strKEGGG = sys.argv[1]
 
 iLine = 4
 iCLine = 0
 
-setPaths = set()
+aPaths = []
 hashOrgs = {}
 fOrg = False
-for strLine in sys.stdin:
-	astrLine = strLine.rstrip( ).split( "\t" )
-	if iCLine == iLine:
-		if fOrg:
-			setPaths.add( ( astrLine[0], astrLine[2] ) )
-		else:
-			setPaths.add( astrLine[0] )
-	elif astrLine[0] == "ID":
-		fOrg = astrLine[2] == "Organism"
+fFirst = True
+for astrLine in csv.reader( sys.stdin, csv.excel_tab ):
+	if fFirst:
+		fFirst = False
+		fOrg = ( astrLine[2] == "Organism" )
 	else:
-		iCLine += 1
+		if fOrg:
+			aPaths.append( (astrLine[0], astrLine[2]) )
+		else:
+			aPaths.append( astrLine[0] )
 
 hashMeta = {}
 pattern = re.compile('[\W_]+')
 fClass = False
-for strLine in open( strKEGGc ):
-	astrLine = strLine.rstrip( ).split( "|" )
-	strKEGG = astrLine[-1].split( "_" )[-1]
+for strLine in open( strKEGGG, "rU" ):
+	strKEGG = strLine.rstrip( ).split( "_" )[-1]
 	hashMeta[strKEGG] = strLine.rstrip( )
 
-if fOrg:
-	for ( strKEGG, strOrg ) in setPaths:
-		print( hashMeta.get( strKEGG, strKEGG ) + "_" + strOrg )
-else:
-	for strKEGG in setPaths:
-		print( hashMeta.get( strKEGG, strKEGG ) )
+fHit = False
+for pPath in aPaths:
+	strKEGG, strOrg = pPath if fOrg else (pPath, "")
+	strMeta = hashMeta.get( strKEGG )
+#	sys.stderr.write( "%s\n" % [strKEGG, strOrg, strMeta] )
+	if strMeta:
+		fHit = True
+	if fHit:
+		print( hashMeta.get( strKEGG, strKEGG ) + ( ( "_" + strOrg ) if fOrg else "" ) )
