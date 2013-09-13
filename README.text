@@ -387,12 +387,12 @@ Pathway information formatted for input to LefSe (exported)
 ### `04b-*-graphlan_tree.txt`
 
 Pathway information formatted as a tree reflecting the KEGG BRITE hierarchy
-for plotting in [http://huttenhower.sph.harvard.edu/graphlan](GraPhlAn).
+for plotting in [GraPhlAn](http://huttenhower.sph.harvard.edu/graphlan).
 
 ### `04b-*-graphlan_rings.txt`
 
 Pathway abundances formatted for overplotting on the KEGG BRITE hierarchy
-using [http://huttenhower.sph.harvard.edu/graphlan](GraPhlAn).
+using [GraPhlAn](http://huttenhower.sph.harvard.edu/graphlan).
 
 ### `01b-*.txt`
 
