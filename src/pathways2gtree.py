@@ -29,8 +29,8 @@ hashMeta = {}
 pattern = re.compile('[\W_]+')
 fClass = False
 for strLine in open( strKEGGG, "rU" ):
-	strKEGG = strLine.rstrip( ).split( "_" )[-1]
-	hashMeta[strKEGG] = strLine.rstrip( )
+	strLine = strLine.rstrip( )
+	hashMeta[strLine.split( "_" )[-1]] = strLine
 
 fHit = False
 for pPath in aPaths:

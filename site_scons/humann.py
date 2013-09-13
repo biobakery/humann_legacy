@@ -109,8 +109,7 @@ c_strFileGeneLs				= data( "genels" )
 c_strFileTaxPC				= data( "taxpc" )
 c_strFileECC				= data( "ecc" )
 c_strFileCOGC				= data( "cogc" )
-c_strFileKO                 = data( "ko-graphlan" )
-c_strFileM                  = data( "m-graphlan" )
+c_strFileGraphlan			= data( "graphlan" )
 c_strFileKOCGZ				= data( "koc.gz" )
 c_strFileGeneLsGZ			= data( "genels.gz" )
 # MetaCyc derived
@@ -158,7 +157,8 @@ c_strProgExclude			= prog( "exclude.py" )
 c_strProgNormalize			= prog( "normalize.py" )
 c_strProgEco				= prog( "eco.py" )
 c_strProgMetadata			= prog( "metadata.py" )
-c_strProgGraphlan			= prog( "pathways2graphlan.py" )
+c_strProgGraphlanTree		= prog( "pathways2gtree.py" )
+c_strProgGraphlanRings		= prog( "pathways2grings.py" )
 #===============================================================================
 # Preprocessing scripts
 #===============================================================================

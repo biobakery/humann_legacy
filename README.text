@@ -384,6 +384,16 @@ Combined pathway abundance matrix for all samples, normalized per column.
 
 Pathway information formatted for input to LefSe (exported)
 
+### `04b-*-graphlan_tree.txt`
+
+Pathway information formatted as a tree reflecting the KEGG BRITE hierarchy
+for plotting in [http://huttenhower.sph.harvard.edu/graphlan](GraPhlAn).
+
+### `04b-*-graphlan_rings.txt`
+
+Pathway abundances formatted for overplotting on the KEGG BRITE hierarchy
+using [http://huttenhower.sph.harvard.edu/graphlan](GraPhlAn).
+
 ### `01b-*.txt`
 
 Combined KO abundance matrix for all samples, normalized per column.

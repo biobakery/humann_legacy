@@ -189,8 +189,10 @@ c_aastrFinalizers	= [
 #	A required tag for the file to differentiate it from other HUMAnN outputs
 #===============================================================================
 c_aastrExport		= [
-	[r'04b.*mpt',	[[c_strProgGraphlan, [c_strFileKO]]],	"-graphlan"],
-	[r'04b.*mpm',   [[c_strProgGraphlan, [c_strFileM]]],	"-graphlan"],
+	[r'04b.*mpt',	[[c_strProgGraphlanTree, [c_strFileGraphlan]]],		"-graphlan_tree"],
+	[r'04b.*mpm',   [[c_strProgGraphlanTree, [c_strFileGraphlan]]],		"-graphlan_tree"],
+	[r'04b.*mpt',	[[c_strProgGraphlanRings, [c_strFileGraphlan]]],	"-graphlan_rings"],
+	[r'04b.*mpm',   [[c_strProgGraphlanRings, [c_strFileGraphlan]]],	"-graphlan_rings"],
 ]
 
 main( globals( ) )
