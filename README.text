@@ -16,7 +16,8 @@ and pathway summaries as outputs:
 * The abundance of each orthologous gene family in the community.  Orthologous
 	families are groups of genes that perform roughly the same biological roles.
 	HUMAnN uses the KEGG Orthology (KO) by default, but any catalog of orthologs
-	can be employed with minor changes (COG, NOG, etc.) For more information, please refer to the "Using alternatives to KEGG" section below.
+	can be employed with minor changes (COG, NOG, etc.). 
+	For more information, please refer to the "Using alternatives to KEGG" section below.
 
 * The presence/absence of each pathway in the community.  HUMAnN refers to
 	pathway presence/absence as "coverage," and defines a pathway as a set of
