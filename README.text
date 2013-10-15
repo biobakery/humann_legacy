@@ -477,13 +477,13 @@ Using alternatives to KEGG
 ---------------------------
 The process of using HUMAnN with a database other than KEGG (e.g. COG, NOG, etc.) requires:
 
--- A FASTA file of nucleotide sequences against which the meta'ome is searched, each labeled with a gene ID (for KEGG, the genes.pep file distributed with KEGG).
+* A FASTA file of nucleotide sequences against which the meta'ome is searched, each labeled with a gene ID (for KEGG, the genes.pep file distributed with KEGG).
 
--- A file of nucleotide sequence lengths, each labeled with a gene ID (for KEGG, data/genels).
+* A file of nucleotide sequence lengths, each labeled with a gene ID (for KEGG, data/genels).
 
--- A file of gene-to-OG mappings (for KEGG, data/koc).
+* A file of gene-to-OG mappings (for KEGG, data/koc).
 
--- A file of OG-to-pathway mappings (for KEGG, data/keggc).
+* A file of OG-to-pathway mappings (for KEGG, data/keggc).
 
 Each of those four files should be replaced for HUMAnN to run on the alternative database.
 
