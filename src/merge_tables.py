@@ -20,9 +20,18 @@ for iTable in range( len( astrTables ) ):
 			astrData = astrLine[1:]
 		if fFirst:
 			fFirst = False
-			fOrg = astrLine[1] == "Organism"
-			aastrHeaders.append( astrData )
-			continue
+			fData = False
+			try:
+				[float(s) for s in astrData]
+				fData = True
+			except ValueError:
+				pass
+			if fData:
+				aastrHeaders.append( [( "C%d" % ( i + 1 ) ) for i in xrange( len( astrData ) )] )
+			else:
+				fOrg = ( astrLine[1] == "Organism" )
+				aastrHeaders.append( astrData )
+				continue
 		if astrLine[0] == "#":
 			continue
 		if fOrg:
