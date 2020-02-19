@@ -1,33 +1,33 @@
-HUMAnN: The HMP Unified Metabolic Analysis Network
+HUMAnN 1.0: The HMP Unified Metabolic Analysis Network
 ==================================================
 
 To find...  | ...check out:
 ----------- | -------------
-Web page	| [http://huttenhower.sph.harvard.edu/humann](http://huttenhower.sph.harvard.edu/humann)
+Web page	| [http://huttenhower.sph.harvard.edu/humann_legacy](http://huttenhower.sph.harvard.edu/humann_legacy)
 User group	| [https://groups.google.com/forum/?fromgroups#!forum/humann-users](https://groups.google.com/forum/?fromgroups#!forum/humann-users)
 Contact		| Curtis Huttenhower, <chuttenh@hsph.harvard.edu>
 
-HUMAnN is a pipeline for efficiently and accurately determining the
+HUMAnN 1.0 is a pipeline for efficiently and accurately determining the
 presence/absence and abundance of microbial pathways in a community from
 metagenomic data.  Sequencing a metagenome typically produces millions of
-short DNA/RNA reads.  HUMAnN takes these reads as inputs and produces gene
+short DNA/RNA reads.  HUMAnN 1.0 takes these reads as inputs and produces gene
 and pathway summaries as outputs:
 
 * The abundance of each orthologous gene family in the community.  Orthologous
 	families are groups of genes that perform roughly the same biological roles.
-	HUMAnN uses the KEGG Orthology (KO) by default, but any catalog of orthologs
+	HUMAnN 1.0 uses the KEGG Orthology (KO) by default, but any catalog of orthologs
 	can be employed with minor changes (COG, NOG, etc.). 
 	For more information, please refer to the "Using alternatives to KEGG" section below.
 
-* The presence/absence of each pathway in the community.  HUMAnN refers to
+* The presence/absence of each pathway in the community.  HUMAnN 1.0 refers to
 	pathway presence/absence as "coverage," and defines a pathway as a set of
-	two or more genes.  HUMAnN uses KEGG pathways and modules by default, but
+	two or more genes.  HUMAnN 1.0 uses KEGG pathways and modules by default, but
 	again can easily be modified to use GO terms or other gene sets.
 
 * The abundance of each pathway in the community, i.e. how many "copies" of
 	that pathway are present.
 
-HUMAnN can thus be used in tandem with any translated BLAST program to convert
+HUMAnN 1.0 can thus be used in tandem with any translated BLAST program to convert
 sequence reads into coverage and abundance tables summarizing the gene families
 and pathways in a microbial community.  This lets you analyze a collection of
 metagenomes as a matrix of gene/pathway abundances, just like you might analyze
@@ -43,7 +43,7 @@ Curtis Huttenhower
 
 Many thanks to the NIH and to the entire Human Microbiome Project team for
 making the HMP possible and for the many collaborators who helped to make
-HUMAnN a reality.  Sahar Abubucker and Makedonka Mitreva (Washington
+HUMAnN 1.0 a reality.  Sahar Abubucker and Makedonka Mitreva (Washington
 University) co-led the Metabolic Reconstruction group, the pipeline
 incorporates software from Yuzhen Ye (Indiana University), Beltran
 Rodriguez-Mueller (SDSU), and Pat Schloss (University of Michigan), and
@@ -54,7 +54,7 @@ Institute), Johannes Goll (JCVI), and many others.
 BASIC OPERATION
 ===============
 
-HUMAnN uses the scons build system to drive its scientific workflow
+HUMAnN 1.0 uses the scons build system to drive its scientific workflow
 (see PREREQUISITES).  scons works very much like make, converting a set of
 inputs into a set of outputs one step at a time, and running only the steps
 necessary to produce the desired output.  Thus, to analyze your own data:
@@ -68,7 +68,7 @@ necessary to produce the desired output.  Thus, to analyze your own data:
 * Run the "scons" command, optionally parallelizing multiple analyses using the
 	"-j" flag.  Results will be placed in the "output" directory.
 
-HUMAnN is highly configurable in order to perform a collection of very
+HUMAnN 1.0 is highly configurable in order to perform a collection of very
 computationally intensive tasks efficiently and flexibly.  Please see the
 included sample input files, metadata files, and SConstruct settings for an
 overview of the software's configuration and the file formats it consumes and
@@ -77,12 +77,12 @@ produces.
 PREREQUISITES
 =============
 
-HUMAnN has no installation per se, but it does depend on the following items:
+HUMAnN 1.0 has no installation per se, but it does depend on the following items:
 
-* A network connection.  HUMAnN downloads a number of data and software
+* A network connection.  HUMAnN 1.0 downloads a number of data and software
 	components from standard repositories during exection.  Please ensure
 	that a network connection is available at the least for the first run.
-	HUMAnN will use "curl" by default to download files, and this can be
+	HUMAnN 1.0 will use "curl" by default to download files, and this can be
 	changed (e.g. to use "wget") by editing the `humann.py` file.
 
 * A bunch of RAM.  Processing one Illumina lane of metagenomic reads can take
@@ -97,7 +97,7 @@ HUMAnN has no installation per se, but it does depend on the following items:
 
 * [blastx](http://www.ncbi.nlm.nih.gov/blast/)
 
-Please note that HUMAnN does not run blastx for you.  It instead consumes
+Please note that HUMAnN 1.0 does not run blastx for you.  It instead consumes
 tabular BLAST results as input.  We recommend the default "-outfmt 6" setting
 as described below and in the provided SConstruct configuration.
 Alternatively, input processors are also provided for accelerated BLAST
@@ -128,11 +128,11 @@ One or more of the following:
 
 Place (or symlink) each file with a .txt, .txt.gz, .txt.bz, .bam, .csv, .tsv,
 or .pcl extension as appropriate in the "input" directory
-before running HUMAnN.  The pipeline includes processors for three
+before running HUMAnN 1.0 .  The pipeline includes processors for three
 tab-delimited text formats by default (below) and BAM binary format and can
 easily by modified to accept more.
 
-As an example, the default inputs provided with HUMAnN were generated using:
+As an example, the default inputs provided with HUMAnN 1.0 were generated using:
 
 	blastx -outfmt 6 -db 28_kegg_genomes < mock_even_lc.fasta.gz | gzip -c > mock_even_lc.txt.gz
 
@@ -166,7 +166,7 @@ Additionally, tab-delimited (.csv, .tsv, or .pcl) files of tabulated gene
 abundances (KEGG KO identifiers by default) can be used, with each column
 representing one sample and each row one gene family.  Any such files placed in
 the input directory will be split per column and each sample will be
-run through the HUMAnN pipeline separately.
+run through the HUMAnN 1.0 pipeline separately.
 
 OUTPUTS
 =======
@@ -211,9 +211,9 @@ OPTIONAL COMPONENTS
 ===================
 
 You can reproduce the entire performance evaluation using synthetic communities
-in the HUMAnN manuscript with the tools in the "synth" subdirectory.  This
-optional step is omitted during default HUMAnN operation but will be
-automatically incorporated into HUMAnN output if one or more synthetic
+in the HUMAnN 1.0 manuscript with the tools in the "synth" subdirectory.  This
+optional step is omitted during default HUMAnN 1.0 operation but will be
+automatically incorporated into HUMAnN 1.0 output if one or more synthetic
 communities are built.  To do this:
 
 * Place a .fa/.qual file pair or .fastq file in the "synth/output" directory
@@ -233,12 +233,12 @@ communities are built.  To do this:
 
 * The true gene and pathway abundances/coverages will be placed in
 	correspondingly named files in the "synth/output" directory.  These will
-	be automatically detected the next time HUMAnN is executed using scons.
+	be automatically detected the next time HUMAnN 1.0 is executed using scons.
 	They will be merged into the overall output files, and if correspondingly
 	named input files ("mock_stg_lc*", "mock_even_hc*", etc.) are available,
 	their performance will be automatically plotted as PDF output files using R.
 
-HUMAnN can also add a level of organism specificity to the output. To do this:
+HUMAnN 1.0 can also add a level of organism specificity to the output. To do this:
 
 * Turn on the feature by changing c_fOrg to True in SConstruct.
 
@@ -255,7 +255,7 @@ that _can_ process an input file _will_.  This allows, for example, the quick
 and easy comparison of the results of metabolic reconstruction using many
 slightly different parameter settings to determine which is optimal.
 
-Note that while HUMAnN uses primarily KEGG Orthology KO identifiers for genes
+Note that while HUMAnN 1.0 uses primarily KEGG Orthology KO identifiers for genes
 and KEGG pathway (ko) or module (M) identifiers for pathways, this can be
 easily modified to suit your analysis needs.  For example, code to process
 MetaCyc reaction identifiers (for gene families) and pathway identifiers is
@@ -493,14 +493,14 @@ maq installation issues
 Some users have reported freezes during the synthetic metagenome maq
 installation process that are outside of HUMAnN's control.  If maq locks up
 during compilation or installation, feel free to install it directly from the
-appropriate Sourceforge package in maq-0.7.1/maq (as expected by HUMAnN) and
+appropriate Sourceforge package in maq-0.7.1/maq (as expected by HUMAnN 1.0 ) and
 replace the funcUntarMAQ function in synth/SConstruct with
 
 	def funcUntarMAQ( target, source, env ):
 	    return 0
 
 Note that the synthetic metagenomes are an optional component not needed for
-normal HUMAnN operation.
+normal HUMAnN 1.0 operation.
 
 Minpath/glpk issues
 -------------------
@@ -509,8 +509,8 @@ If you get the error:
 	sh: data/MinPath/glpk-4.6/examples/glpsol: cannot execute binary file
 
 Minpath comes bundled with a version of glpk that will only run on Linux;
-HUMAnN can't easily replace this itself "on the fly."  To fix the problem
-and run HUMAnN on MacOS X, after this error is produced, remove MinPath's
+HUMAnN 1.0 can't easily replace this itself "on the fly."  To fix the problem
+and run HUMAnN 1.0 on MacOS X, after this error is produced, remove MinPath's
 glpk folder and replace it with a version compiled for Mac from here:
 
 [http://www.gnu.org/software/glpk/](http://www.gnu.org/software/glpk/)
@@ -525,18 +525,18 @@ or here:
 
 Filename restrictions
 ---------------------
-Please do not provide HUMAnN with any input files including _ followed by a
-digit, e.g. `file_123.txt` or `an_00_example`.  HUMAnN uses filename tags of
+Please do not provide HUMAnN 1.0 with any input files including _ followed by a
+digit, e.g. `file_123.txt` or `an_00_example`.  HUMAnN 1.0 uses filename tags of
 this form to indicate output from each of its processing stages (as
 described above), and input files that include such patterns should be
-renamed before HUMAnN execution.
+renamed before HUMAnN 1.0 execution.
 
 VERSION HISTORY
 ===============
 
 ### v0.9, 12-06-10
 
-* Initial modularization of HUMAnN code
+* Initial modularization of HUMAnN 1.0 code
 * First application to HMP production data (mblastx)
 
 ### v0.91, 02-02-11
@@ -567,7 +567,7 @@ VERSION HISTORY
 
 ### v0.96, 07-28-11
 
-* MAJOR CHANGE: KEGG is now defunct, and HUMAnN has been updated accordingly
+* MAJOR CHANGE: KEGG is now defunct, and HUMAnN 1.0 has been updated accordingly
 	* KEGG derived information needed for normal operation is included
 	* KEGG files needed for synthetic metagenome construction are _not_ included
 	* "Frozen" synthetic metagenome evaluation is still possible
