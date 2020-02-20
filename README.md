@@ -4,7 +4,7 @@ HUMAnN 1.0: The HMP Unified Metabolic Analysis Network
 To find...  | ...check out:
 ----------- | -------------
 Web page	| [http://huttenhower.sph.harvard.edu/humann_legacy](http://huttenhower.sph.harvard.edu/humann_legacy)
-User group	| [https://groups.google.com/forum/?fromgroups#!forum/humann-users](https://groups.google.com/forum/?fromgroups#!forum/humann-users)
+Support	| [https://forum.biobakery.org/c/Microbial-community-profiling/HUMAnN](https://forum.biobakery.org/c/Microbial-community-profiling/HUMAnN)
 Contact		| Curtis Huttenhower, <chuttenh@hsph.harvard.edu>
 
 HUMAnN 1.0 is a pipeline for efficiently and accurately determining the
